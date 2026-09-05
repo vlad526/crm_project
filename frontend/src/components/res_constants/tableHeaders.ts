@@ -1,0 +1,17 @@
+export const ORDER_TABLE_HEADERS = [
+    "id",
+    "name",
+    "surname",
+    "email",
+    "phone",
+    "age",
+    "course",
+    "course_format",
+    "course_type",
+    "status",
+    "sum",
+    "alreadyPaid",
+    "group",
+    "created_at",
+    "manager",
+] as const;

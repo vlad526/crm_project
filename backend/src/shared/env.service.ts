@@ -1,0 +1,51 @@
+import 'dotenv/config';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
+@Injectable()
+export class EnvService {
+  public readonly db_Type: string;
+  public readonly mysqlHost: string;
+  public readonly mysqlPort: number;
+  public readonly mysqlDatabase: string;
+  public readonly mysqlUser: string;
+  public readonly mysqlPassword: string;
+
+  public readonly jwtAccessSecret: string;
+  public readonly jwtRefreshSecret: string;
+  public readonly accessTokenExpirationTime: number;
+  public readonly refreshTokenExpirationTime: number;
+
+  public readonly adminEmail: string;
+  public readonly adminPassword: string;
+
+  constructor(private configService: ConfigService) {
+    this.db_Type = this.configService.get<string>('DB_TYPE') || 'mysql';
+    this.mysqlHost =
+      this.configService.get<string>('MYSQL_HOST') || '127.0.0.1';
+    this.mysqlPort = parseInt(
+      this.configService.get<string>('MYSQL_PORT') || '3308',
+      10,
+    );
+    this.mysqlDatabase =
+      this.configService.get<string>('MYSQL_DATABASE') || 'crm-school_db';
+    this.mysqlUser = this.configService.get<string>('MYSQL_USER') || 'root';
+    this.mysqlPassword =
+      this.configService.get<string>('MYSQL_PASSWORD') || 'crm-school';
+
+    this.jwtAccessSecret =
+      this.configService.get<string>('JWT_ACCESS_SECRET') || '';
+    this.jwtRefreshSecret =
+      this.configService.get<string>('JWT_REFRESH_SECRET') || '';
+
+    this.accessTokenExpirationTime =
+      Number(this.configService.get<string>('JWT_ACCESS_EXPIRES_IN')) || 900;
+    this.refreshTokenExpirationTime =
+      Number(this.configService.get<string>('JWT_REFRESH_EXPIRES_IN')) || 1800;
+
+    this.adminEmail =
+      this.configService.get<string>('ADMIN_EMAIL') || 'admin@example.com';
+    this.adminPassword =
+      this.configService.get<string>('ADMIN_PASSWORD') || 'adm1n@';
+  }
+}

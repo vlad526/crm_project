@@ -1,0 +1,16 @@
+export type OrderSortField =
+    | 'id'
+    | 'name'
+    | 'surname'
+    | 'email'
+    | 'phone'
+    | 'age'
+    | 'course'
+    | 'course_format'
+    | 'course_type'
+    | 'status'
+    | 'sum'
+    | 'alreadyPaid'
+    | 'group'
+    | 'created_at'
+    | 'manager';
