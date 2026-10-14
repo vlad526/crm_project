@@ -18,12 +18,17 @@ export class OrdersMapper {
       utm: order.utm,
       msg: order.msg,
       status: order.status,
+      created_at: order.created_at,
       group: order.group
         ? { id: order.group.id, name: order.group.name }
         : undefined,
       manager: order.manager
-        ? { id: order.manager.id, name: order.manager.name }
+        ? {
+          id: order.manager.id,
+          name: order.manager.name,
+          surname: order.manager.surname,
+        }
         : undefined,
-    };
+    } as ResponseOrderDto;
   }
 }

@@ -10,7 +10,6 @@ import { CreateCommentDto } from '../models/create-comment.dto';
 import { CommentEntity } from '../../../database/entities/comment.entity';
 import { OrderEntity } from '../../../database/entities/order.entity';
 import { StatusesEnum } from '../../../database/entities/enums/statuses.enum';
-import { UserRoleEnum } from '../../../database/entities/enums/user-role.enum';
 
 @Injectable()
 export class CommentsService {
@@ -41,17 +40,14 @@ export class CommentsService {
           throw new NotFoundException(`Order with ID ${orderId} was not found`);
         }
 
-        const isOwner =
-          targetOrder.manager && targetOrder.manager.id === currentUser.id;
-        const isAdmin = currentUser.role === UserRoleEnum.ADMIN;
-
-        if (targetOrder.manager && !isOwner && !isAdmin) {
-          throw new ForbiddenException(
-            'You do not have permission to comment on this order',
-          );
-        }
-
-        if (!targetOrder.manager) {
+        if (targetOrder.manager) {
+          const isOwner = Number(targetOrder.manager.id) === Number(currentUser.id);
+          if (!isOwner) {
+            throw new ForbiddenException(
+              'This application is already assigned to another manager. Only the assigned manager can comment on it.',
+            );
+          }
+        } else {
           targetOrder.manager = currentUser;
         }
 

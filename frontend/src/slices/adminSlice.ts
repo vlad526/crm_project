@@ -57,36 +57,46 @@ export const addManager = createAsyncThunk(
   }
 );
 
-export const copyActivationLink = createAsyncThunk(
+export const copyActivationLink = createAsyncThunk<
+  { userId: number; link: string; emailSent: boolean },
+  number,
+  { rejectValue: string }
+>(
   'admin/copyActivationLink',
   async (userId: number, { rejectWithValue }) => {
-      try {
-          const response = await getActivationLink(userId);
-          return { userId, link: response.link };
-      } catch (error) {
-          const message = getErrorMessage(error);
-          const firstMessage = message === "Incorrect login or password"
-            ? "Failed to copy link"
-            : message;
-          return rejectWithValue(firstMessage);
-      }
-  }
+    try {
+      const response = await getActivationLink(userId);
+      return { userId, link: response.link, emailSent: response.emailSent };
+    } catch (error) {
+      const message = getErrorMessage(error);
+      const firstMessage =
+        message === 'Incorrect login or password'
+          ? 'Failed to copy link'
+          : message;
+      return rejectWithValue(firstMessage);
+    }
+  },
 );
 
-export const copyRecoveryLink = createAsyncThunk(
+export const copyRecoveryLink = createAsyncThunk<
+  { userId: number; link: string; emailSent: boolean },
+  number,
+  { rejectValue: string }
+>(
   'admin/copyRecoveryLink',
   async (userId: number, { rejectWithValue }) => {
-      try {
-          const { link } = await getRecoveryLink(userId);
-          return { userId, link };
-      } catch (error: unknown) {
-          const message = getErrorMessage(error);
-          const finalMessage = message === "Incorrect login or password"
-            ? "Failed to generate or copy recovery link"
-            : message;
-          return rejectWithValue(finalMessage);
-      }
-  }
+    try {
+      const response = await getRecoveryLink(userId);
+      return { userId, link: response.link, emailSent: response.emailSent };
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      const finalMessage =
+        message === 'Incorrect login or password'
+          ? 'Failed to generate or copy recovery link'
+          : message;
+      return rejectWithValue(finalMessage);
+    }
+  },
 );
 
 export const toggleUserBan = createAsyncThunk(

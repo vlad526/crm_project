@@ -18,7 +18,7 @@ import type { IApiError } from "../../models/interfaces/IError/IApiError.ts";
 type EditOrderModalProps = {
     order: IOrder;
     onClose: () => void;
-    onSubmit: (order: IUpdateOrder) => void;
+    onSubmit: (order: IUpdateOrder) => Promise<void> | void;
 };
 
 export const EditOrderModal: FC<EditOrderModalProps> = ({
@@ -33,6 +33,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
       mapOrderToUpdate(order)
     );
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [generalError, setGeneralError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [groupMode, setGroupMode] = useState<"add" | "select">("add");
     const [value, setValue] = useState("");
@@ -100,11 +102,11 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                 group: errorMessage
             }));
         }
-    }
+    };
 
     const handleSelect = () => {
         setGroupMode("select");
-    }
+    };
 
     const toNumberOrUndefined = (value: string) =>
       value === "" ? undefined : Number(value);
@@ -131,6 +133,38 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
         return true;
     };
 
+    const handleFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setGeneralError(null);
+
+        if (groupMode === "add" && value.trim() !== "") {
+            setErrors(prev => ({
+                ...prev,
+                group: "Спочатку натисніть кнопку 'Add', щоб додати цю групу"
+            }));
+            return;
+        }
+
+        if (validateOrder()) {
+            setIsSubmitting(true);
+            try {
+                const payload: IUpdateOrder = { ...editedOrder };
+                await onSubmit(payload);
+            } catch (err: unknown) {
+                let errorMessage = "Failed to update order";
+                if (typeof err === "object" && err !== null && ("message" in err || "statusCode" in err)) {
+                    const apiErr = err as IApiError;
+                    errorMessage = Array.isArray(apiErr.message) ? apiErr.message[0] : (apiErr.message || errorMessage);
+                } else if (typeof err === "string") {
+                    errorMessage = err;
+                }
+                setGeneralError(errorMessage);
+            } finally {
+                setIsSubmitting(false);
+            }
+        }
+    };
+
     return (
       <div
         className="fixed inset-0 flex items-center justify-center z-50"
@@ -142,23 +176,14 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
             className="relative bg-white rounded-lg p-6 w-full max-w-4xl z-10 shadow-lg"
             onMouseDown={(e) => e.stopPropagation()}
           >
+              {generalError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm font-medium">
+                    {generalError}
+                </div>
+              )}
+
               <form
-                onSubmit={(e) => {
-                    e.preventDefault();
-
-                    if (groupMode === "add" && value.trim() !== "") {
-                        setErrors(prev => ({
-                            ...prev,
-                            group: "Спочатку натисніть кнопку 'Add', щоб додати цю групу"
-                        }));
-                        return;
-                    }
-
-                    if (validateOrder()) {
-                        const payload: IUpdateOrder = { ...editedOrder };
-                        onSubmit(payload);
-                    }
-                }}
+                onSubmit={handleFormSubmit}
                 className="grid grid-cols-2 gap-4"
               >
                   <div>
@@ -168,12 +193,11 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                           id="group"
                           value={value}
                           onChange={(e) => {
-                              setValue(e.target.value)
+                              setValue(e.target.value);
                               if (errors.group) {
                                   setErrors(prev => ({ ...prev, group: "" }));
                               }
                           }}
-
                           className="w-full bg-gray-100 border-transparent px-3 py-2 rounded-md focus:outline-none"
                           placeholder="Group"
                         />
@@ -199,7 +223,6 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       )}
                       {errors.group && <span className="text-red-500 text-xs">{errors.group}</span>}
 
-
                       <div className="flex w-full gap-1 mt-1">
                           <button
                             type="button"
@@ -223,7 +246,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       </div>
                   </div>
 
-                  <div><label htmlFor="status">Status</label>
+                  <div>
+                      <label htmlFor="status">Status</label>
                       <EnumSelect
                         id="status"
                         value={editedOrder.status}
@@ -236,7 +260,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.status && <span className="text-red-500 text-xs">{errors.status}</span>}
                   </div>
 
-                  <div><label htmlFor="name">Name</label>
+                  <div>
+                      <label htmlFor="name">Name</label>
                       <Input
                         id="name"
                         value={editedOrder.name ?? ""}
@@ -252,7 +277,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.name && <span className="text-red-500 text-xs">{errors.name}</span>}
                   </div>
 
-                  <div><label htmlFor="sum">Sum</label>
+                  <div>
+                      <label htmlFor="sum">Sum</label>
                       <Input
                         id="sum"
                         type="number"
@@ -270,7 +296,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.sum && <span className="text-red-500 text-xs">{errors.sum}</span>}
                   </div>
 
-                  <div><label htmlFor="surname">Surname</label>
+                  <div>
+                      <label htmlFor="surname">Surname</label>
                       <Input
                         id="surname"
                         value={editedOrder.surname ?? ""}
@@ -286,7 +313,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.surname && <span className="text-red-500 text-xs">{errors.surname}</span>}
                   </div>
 
-                  <div><label htmlFor="alreadyPaid">Already paid</label>
+                  <div>
+                      <label htmlFor="alreadyPaid">Already paid</label>
                       <Input
                         id="alreadyPaid"
                         type="number"
@@ -304,7 +332,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.alreadyPaid && <span className="text-red-500 text-xs">{errors.alreadyPaid}</span>}
                   </div>
 
-                  <div><label htmlFor="email">Email</label>
+                  <div>
+                      <label htmlFor="email">Email</label>
                       <Input
                         id="email"
                         value={editedOrder.email ?? ""}
@@ -320,7 +349,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.email && <span className="text-red-500 text-xs">{errors.email}</span>}
                   </div>
 
-                  <div><label htmlFor="course">Course</label>
+                  <div>
+                      <label htmlFor="course">Course</label>
                       <EnumSelect
                         id="course"
                         value={editedOrder.course}
@@ -333,9 +363,11 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.course && <span className="text-red-500 text-xs">{errors.course}</span>}
                   </div>
 
-                  <div><label htmlFor="phone">Phone</label>
+                  <div>
+                      <label htmlFor="phone">Phone</label>
                       <Input
                         id="phone"
+                        maxLength={12}
                         value={editedOrder.phone ?? ""}
                         onChange={(e) =>
                           setEditedOrder(prev => ({
@@ -349,7 +381,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.phone && <span className="text-red-500 text-xs">{errors.phone}</span>}
                   </div>
 
-                  <div><label htmlFor="course">Course format</label>
+                  <div>
+                      <label htmlFor="course_format">Course format</label>
                       <EnumSelect
                         id="course_format"
                         value={editedOrder.course_format}
@@ -362,7 +395,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.course_format && <span className="text-red-500 text-xs">{errors.course_format}</span>}
                   </div>
 
-                  <div><label htmlFor="age">Age</label>
+                  <div>
+                      <label htmlFor="age">Age</label>
                       <Input
                         id="age"
                         type="number"
@@ -380,7 +414,8 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                       {errors.age && <span className="text-red-500 text-xs">{errors.age}</span>}
                   </div>
 
-                  <div><label htmlFor="course_type">Course type</label>
+                  <div>
+                      <label htmlFor="course_type">Course type</label>
                       <EnumSelect
                         id="course_type"
                         value={editedOrder.course_type}
@@ -406,9 +441,10 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
 
                       <Button
                         type="submit"
-                        className="px-4 py-2 border bg-[#43a047] text-white hover:bg-[#2e7d32] transition-colors"
+                        disabled={isSubmitting}
+                        className="px-4 py-2 border bg-[#43a047] text-white hover:bg-[#2e7d32] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                          Submit
+                          {isSubmitting ? "Saving..." : "Submit"}
                       </Button>
                   </div>
               </form>

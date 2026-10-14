@@ -22,7 +22,6 @@ import {
 } from '../dto/req/order.stats.dto';
 import { IOrderRawStats } from '../interfaces/order-raw-stats.interface';
 import { UpdateOrderDto } from '../dto/req/update.order.dto';
-import { UserRoleEnum } from '../../../database/entities/enums/user-role.enum';
 import { GroupEntity } from '../../../database/entities/group.entity';
 import * as ExcelJS from 'exceljs';
 
@@ -325,14 +324,18 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
+
     if (targetedOrder.manager) {
-      const IsOwner =
-        Number(targetedOrder.manager.id) === Number(currentUser.id);
-      const isAdmin = currentUser.role === UserRoleEnum.ADMIN;
-      if (!IsOwner && !isAdmin) {
+      const isOwner = Number(targetedOrder.manager.id) === Number(currentUser.id);
+      if (!isOwner) {
         throw new ForbiddenException(
-          'This application is already assigned to a manager and cannot be edited',
+          'This application is already assigned to a manager and cannot be edited by anyone else',
         );
+      }
+    } else {
+      targetedOrder.manager = currentUser;
+      if (!targetedOrder.status || targetedOrder.status === StatusesEnum.NEW) {
+        targetedOrder.status = StatusesEnum.INWORK;
       }
     }
 

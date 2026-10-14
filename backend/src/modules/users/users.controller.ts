@@ -9,6 +9,7 @@ import {
   Body,
   Delete,
   Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -16,9 +17,7 @@ import { UsersService } from './services/users.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRoleEnum } from '../../database/entities/enums/user-role.enum';
 import { UserEntity } from '../../database/entities/user.entity';
-
 import type { UserRequest } from '../auth/intefaces/user-request.interface';
-
 import { IUsersRequestDto } from './models/dto/users.req.dto';
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -38,9 +37,10 @@ export class UsersController {
   async create(@Body() usersRequestDto: IUsersRequestDto): Promise<UserEntity> {
     return await this.usersService.create(usersRequestDto);
   }
+
   @Roles(UserRoleEnum.ADMIN)
-  @Delete('delete')
-  async delete(@Param() id: number): Promise<void> {
+  @Delete(':id')
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return await this.usersService.delete(id);
   }
 }

@@ -5,8 +5,8 @@ import { TypesEnum } from '../../../../database/entities/enums/types.enum';
 import { StatusesEnum } from '../../../../database/entities/enums/statuses.enum';
 
 export class ResponseOrderDto {
-  @ApiProperty({ example: 1 })
-  id: string;
+  @ApiProperty({ example: '1' })
+  id!: string;
 
   @ApiProperty({ example: 'Vlad' })
   name?: string;
@@ -47,6 +47,9 @@ export class ResponseOrderDto {
   @ApiProperty({ example: 'NEW', nullable: true })
   status?: StatusesEnum;
 
+  @ApiProperty({ example: '2026-03-01T12:00:00.000Z', nullable: true })
+  created_at?: Date | string | null;
+
   @ApiProperty({
     type: () => Object,
     example: { id: 1, name: 'march-2025' },
@@ -56,8 +59,8 @@ export class ResponseOrderDto {
 
   @ApiProperty({
     type: () => Object,
-    example: { id: '123', name: 'Vlad Popov' },
+    example: { id: 123, name: 'Vlad', surname: 'Popov' },
     nullable: true,
   })
-  manager?: { id: number; name: string };
+  manager?: { id: number; name?: string; surname?: string };
 }

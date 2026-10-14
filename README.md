@@ -9,7 +9,6 @@ git clone
 Переконайся, що в тебе встановлено:
 
 Node.js (LTS версія 22 або вище)
-Docker Desktop
 
 3.Встанови залежності
 
@@ -31,17 +30,21 @@ cp backend/.env.example backend/.env
 
 cp frontend/.env.example frontend/.env
 
-5. Запуск через Docker
+5. Запуск 
 
-docker compose up --build
+cd backend
+npm run start:dev
+
+cd frontend
+npm run dev
 
 Доступ до додатку:
 
-Фронтенд: http://localhost 
+Фронтенд: http://localhost:5173
 
-API: http://localhost
+API: http://localhost:3000
 
-Swagger Docs: http://localhost/docs
+Swagger Docs: http://localhost:3000/docs
 
 6.Робота з Postman
 

@@ -18,7 +18,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     super({
-      // passReqToCallback: true,
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: jwtAccessSecret,
@@ -26,13 +25,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: IJwtPayload) {
+    if (!payload?.jti) {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
     const tokenEntity = await this.tokenRepository.findOne({
       where: { jti: payload.jti, isBlocked: false },
       relations: ['user'],
     });
 
-    if (!tokenEntity) {
+    if (!tokenEntity || !tokenEntity.user) {
       throw new UnauthorizedException('Token is blocked or invalid');
+    }
+
+    if (!tokenEntity.user.isActive) {
+      throw new UnauthorizedException('User account is deactivated');
     }
 
     return tokenEntity.user;

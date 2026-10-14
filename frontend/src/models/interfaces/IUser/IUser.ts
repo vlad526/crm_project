@@ -1,5 +1,4 @@
-import type {UserRoleEnum} from "../../../enums/user-role.enum.ts";
-
+import type { UserRoleEnum } from "../../../enums/user-role.enum.ts";
 
 export interface IUser {
     id: number;
@@ -10,7 +9,8 @@ export interface IUser {
     surname: string;
     avatarUrl: string | null;
     isActive: boolean;
-    last_login: string | null;
+    lastLogin?: string | null;
+    last_login?: string | null;
     total_orders?: number;
     stats?: {
         total: number;

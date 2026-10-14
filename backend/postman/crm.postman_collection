@@ -244,7 +244,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"login\": \"admin@example.com\",\r\n  \"password\": \"adm1n@\"\r\n}",
+              "raw": "{\r\n  \"login\": \"admin@gmail.com\",\r\n  \"password\": \"admin\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"

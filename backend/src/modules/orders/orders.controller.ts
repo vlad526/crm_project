@@ -46,6 +46,7 @@ export class OrdersController {
       status: StatusesEnum.NEW,
     });
   }
+
   @Roles(UserRoleEnum.MANAGER, UserRoleEnum.ADMIN)
   @Get('excel')
   async exportExcel(
@@ -89,7 +90,7 @@ export class OrdersController {
   }
 
   @Roles(UserRoleEnum.ADMIN)
-  @Patch(':id/assign/:manager')
+  @Patch(':id/assign/:managerId')
   async assignManager(
     @Param('id') orderId: string,
     @Param('managerId', ParseIntPipe) managerId: number,
@@ -108,6 +109,7 @@ export class OrdersController {
     }
     return await this.ordersService.takeOrder(id, req.user.userId);
   }
+
   @Roles(UserRoleEnum.ADMIN)
   @Delete(':id')
   delete(@Param('id') id: string): Promise<void> {

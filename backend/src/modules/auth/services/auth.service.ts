@@ -100,9 +100,16 @@ export class AuthService {
 
       if (
         !activeTokenEntity ||
+        !activeTokenEntity.user ||
         activeTokenEntity.refreshTokenExpiresAt < new Date()
       ) {
         throw new UnauthorizedException('invalid or expired refresh token');
+      }
+
+      if (!activeTokenEntity.user.isActive) {
+        activeTokenEntity.isBlocked = true;
+        await tokenRepository.save(activeTokenEntity);
+        throw new ForbiddenException('User account is inactive');
       }
 
       activeTokenEntity.isBlocked = true;

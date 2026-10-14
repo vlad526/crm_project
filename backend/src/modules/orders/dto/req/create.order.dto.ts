@@ -5,6 +5,8 @@ import {
   IsEmail,
   Length,
   Min,
+  IsEnum,
+  MaxLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { TransformHelper } from '../../../../common/helpers/trim.helper';
@@ -42,9 +44,10 @@ export class CreateOrderDto {
   @Length(0, 100)
   email?: string;
 
-  @ApiProperty({ example: '+38 (067) 648-76-21' })
+  @ApiProperty({ example: '+380676487621' })
   @IsOptional()
   @IsString()
+  @MaxLength(12, { message: 'Phone number must not exceed 12 characters' })
   @Transform(TransformHelper.toPhone)
   phone?: string;
 
@@ -54,21 +57,21 @@ export class CreateOrderDto {
   @Min(0)
   age?: number;
 
-  @ApiProperty({ example: 'FC' })
+  @ApiProperty({ enum: CoursesEnum, example: CoursesEnum.FS })
   @IsOptional()
-  @Length(0, 10)
+  @IsEnum(CoursesEnum, { message: 'Course must be a valid course enum value' })
   @Transform(TransformHelper.trim)
   course?: CoursesEnum;
 
-  @ApiProperty({ example: 'Online' })
+  @ApiProperty({ enum: FormatsEnum, example: FormatsEnum.ONLINE })
   @IsOptional()
-  @Length(0, 15)
+  @IsEnum(FormatsEnum, { message: 'Course format must be a valid format enum value' })
   @Transform(TransformHelper.trim)
   course_format?: FormatsEnum;
 
-  @ApiProperty({ example: 'VIP' })
+  @ApiProperty({ enum: TypesEnum, example: TypesEnum.PRO })
   @IsOptional()
-  @Length(0, 100)
+  @IsEnum(TypesEnum, { message: 'Course type must be a valid type enum value' })
   @Transform(TransformHelper.trim)
   course_type?: TypesEnum;
 
@@ -94,8 +97,8 @@ export class CreateOrderDto {
   @Transform(TransformHelper.trim)
   msg?: string;
 
+  @ApiProperty({ enum: StatusesEnum, example: StatusesEnum.NEW })
   @IsOptional()
-  @IsString()
-  @Length(0, 15)
+  @IsEnum(StatusesEnum, { message: 'Status must be a valid status enum value' })
   status?: StatusesEnum;
 }

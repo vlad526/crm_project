@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import * as path from 'node:path'; // Додаємо імпорт path
+import * as path from 'node:path';
 
 import { EnvService } from './shared/env.service';
 import { SharedModule } from './shared/shared.module';
@@ -21,6 +21,7 @@ import { SharedModule } from './shared/shared.module';
         migrations: [
           path.join(__dirname, 'database', 'migrations', '*{.ts,.js}'),
         ],
+        ssl: envService.dbSsl ? { rejectUnauthorized: false } : undefined,
       }),
       inject: [EnvService],
     }),

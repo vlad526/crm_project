@@ -76,15 +76,23 @@ export const createManager = async (managerData: IManager):Promise<IUser> => {
     return data;
 }
 
-export const getActivationLink = async (id: number): Promise<{ link: string }> => {
-        const { data } = await axiosInstance.post<{ link: string }>(`/admin/${id}/activation-token`);
-        return data;
-    }
-
-export const getRecoveryLink = async (id: number): Promise<{link:string}> => {
-    const {data} = await axiosInstance.post(`/admin/${id}/recovery-token`);
+export const getActivationLink = async (
+  id: number,
+): Promise<{ link: string; emailSent: boolean }> => {
+    const { data } = await axiosInstance.post<{ link: string; emailSent: boolean }>(
+      `/admin/${id}/activation-token`,
+    );
     return data;
-}
+};
+
+export const getRecoveryLink = async (
+  id: number,
+): Promise<{ link: string; emailSent: boolean }> => {
+    const { data } = await axiosInstance.post<{ link: string; emailSent: boolean }>(
+      `/admin/${id}/recovery-token`,
+    );
+    return data;
+};
 
 export const banUser = async (userId: number): Promise<IUser> => {
     const { data } = await axiosInstance.patch<IUser>(`/admin/${userId}/ban`);

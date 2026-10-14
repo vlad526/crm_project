@@ -41,13 +41,7 @@ export const CreateManagerModal: FC<CreateManagerModalProps> = ({ isOpen, onClos
         try {
             clearErrors('root');
 
-            const managerWithAuth = {
-                ...data,
-                username: data.email.split('@')[0],
-                password: "P@ssword123"
-            };
-
-            await dispatch(addManager(managerWithAuth)).unwrap();
+            await dispatch(addManager(data)).unwrap();
             handleModalClose();
 
         } catch (err: unknown) {

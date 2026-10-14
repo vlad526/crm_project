@@ -1,7 +1,7 @@
 export interface IManager {
-    email: string,
-    password: string,
-    username: string,
-    name: string,
-    surname: string,
+    email: string;
+    name: string;
+    surname: string;
+    password?: string;
+    username?: string;
 }

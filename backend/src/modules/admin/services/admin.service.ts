@@ -10,9 +10,9 @@ import { EmailService } from '../../auth/services/email.service';
 import { CreateManagerReqDto } from '../models/dto/req/create-manager.req.dto';
 import { UserBaseResDto } from '../../users/models/dto/res/users-base-res';
 import bcrypt from 'bcrypt';
+import process from 'node:process';
 
 import { IActionTokenPayload } from '../../auth/intefaces/IAction-token-payload.interface';
-import * as process from 'node:process';
 import { EmailTypeEnum } from '../../../database/entities/enums/email-type.enum';
 
 import { UserResDto } from '../../users/models/dto/res/user.res.dto';
@@ -31,8 +31,11 @@ export class AdminService {
   ) {}
 
   async createManager(dto: CreateManagerReqDto): Promise<UserBaseResDto> {
+
+    const username = dto.username || dto.email;
+
     const existingUser = await this.usersRepository.findOne({
-      where: [{ username: dto.username }, { email: dto.email }],
+      where: [{ username }, { email: dto.email }],
     });
 
     if (existingUser) {
@@ -45,13 +48,16 @@ export class AdminService {
 
     const managerEntity = this.usersRepository.create({
       ...dto,
+      username,
       password: basePassword,
     });
 
     return await this.usersRepository.save(managerEntity);
   }
 
-  async createActivationToken(managerId: number): Promise<{ link: string }> {
+  async createActivationToken(
+    managerId: number,
+  ): Promise<{ link: string; emailSent: boolean }> {
     const manager = await this.usersService.findById(managerId);
     if (!manager) {
       throw new NotFoundException(`User ${managerId} not found`);
@@ -67,17 +73,27 @@ export class AdminService {
 
     await this.usersRepository.update(managerId, { actionToken: token });
 
-    this.emailService
-      .sendEmail(EmailTypeEnum.ACTIVATE_ACCOUNT, manager.email, {
-        name: manager.name,
-        link: link,
-      })
-      .catch((error) => {
-        console.error('Activation email failed to send:', error);
-      });
-    return { link };
+    let emailSent = true;
+    try {
+      await this.emailService.sendEmail(
+        EmailTypeEnum.ACTIVATE_ACCOUNT,
+        manager.email,
+        {
+          name: manager.name,
+          link: link,
+        },
+      );
+    } catch (error) {
+      emailSent = false;
+      console.error('Activation email failed to send:', error);
+    }
+
+    return { link, emailSent };
   }
-  async createRecoveryToken(userId: number): Promise<{ link: string }> {
+
+  async createRecoveryToken(
+    userId: number,
+  ): Promise<{ link: string; emailSent: boolean }> {
     const user = await this.usersService.findById(userId);
     if (!user) {
       throw new NotFoundException(`User ${userId} not found`);
@@ -93,15 +109,22 @@ export class AdminService {
 
     await this.usersRepository.update(userId, { actionToken: token });
 
-    this.emailService
-      .sendEmail(EmailTypeEnum.FORGOT_PASSWORD, user.email, {
-        name: user.name,
-        link: link,
-      })
-      .catch((error) => {
-        console.error('Activation email failed to send:', error);
-      });
-    return { link };
+    let emailSent = true;
+    try {
+      await this.emailService.sendEmail(
+        EmailTypeEnum.FORGOT_PASSWORD,
+        user.email,
+        {
+          name: user.name,
+          link: link,
+        },
+      );
+    } catch (error) {
+      emailSent = false;
+      console.error('Recovery email failed to send:', error);
+    }
+
+    return { link, emailSent };
   }
 
   async getAllUsers(
@@ -147,9 +170,11 @@ export class AdminService {
   disableUser(userId: number, adminUser: UserResDto): Promise<UserResDto> {
     return this.usersService.disable(userId, adminUser);
   }
+
   enableUser(userId: number, adminUser: UserResDto): Promise<UserResDto> {
     return this.usersService.enable(userId, adminUser);
   }
+
   getOrdersStats(): Promise<OrdersStatsDto> {
     return this.ordersService.getStatsByStatus();
   }
