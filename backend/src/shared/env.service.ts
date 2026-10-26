@@ -65,8 +65,8 @@ export class EnvService {
       Number(this.configService.get<string>('JWT_REFRESH_EXPIRES_IN')) || 1800;
 
     this.adminEmail =
-      this.configService.get<string>('ADMIN_EMAIL') || 'admin@example.com';
+      this.configService.get<string>('ADMIN_EMAIL') || 'admin@gmail.com';
     this.adminPassword =
-      this.configService.get<string>('ADMIN_PASSWORD') || 'adm1n@';
+      this.configService.get<string>('ADMIN_PASSWORD') || 'admin';
   }
 }

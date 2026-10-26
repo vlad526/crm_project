@@ -12,7 +12,7 @@ export class UserMapper {
       avatarUrl: user.avatarUrl,
       isActive: user.isActive,
       lastLogin: user.lastLogin,
-      // total_orders: user.orders ? user.orders.length : 0,
-    };
+      last_login: user.lastLogin,
+    } as any;
   }
 }

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import {useAppDispatch, useAppSelector} from "../store/store.ts";
-import {authActions} from "../../slices/authSlice.ts";
+import { useAppDispatch, useAppSelector } from "../store/store.ts";
+import { authActions } from "../../slices/authSlice.ts";
 
 export const useAuth = () => {
     const dispatch = useAppDispatch();
@@ -12,5 +12,8 @@ export const useAuth = () => {
         }
     }, [dispatch, token, me, loading]);
 
-    return { token, me, loading };
+
+    const isAuthLoading = loading || (Boolean(token) && !me);
+
+    return { token, me, loading: isAuthLoading };
 };

@@ -13,14 +13,17 @@ const AdminRoute: FC<{ children: ReactElement }> = ({ children }) => {
     const { me, loading } = useAuth();
 
     if (loading) {
-        return null;
+        return <div>Loading...</div>;
     }
 
     if (!me) {
         return <Navigate to="/login" replace />;
     }
 
-    if (me.role !== UserRoleEnum.ADMIN) {
+
+    const isAdmin = me.role && me.role.toLowerCase() === UserRoleEnum.ADMIN.toLowerCase();
+
+    if (!isAdmin) {
         return <Navigate to="/app/orders" replace />;
     }
 

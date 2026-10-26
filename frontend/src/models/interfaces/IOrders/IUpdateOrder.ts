@@ -5,17 +5,16 @@ import type {StatusesEnum} from "../../../enums/statuses.enum.ts";
 import type {IGroup} from "../IGroup/IGroup.ts";
 
 export interface IUpdateOrder {
-    name?: string;
-    surname?: string;
-    email?: string;
-    phone?: string;
-    course?: CoursesEnum;
-    course_format?: FormatsEnum;
-    course_type?: TypesEnum;
-    status?: StatusesEnum;
-    sum?: number;
-    alreadyPaid?: number;
-    age?: number;
-    group?: number | IGroup;
-    manager?:number;
+    name?: string | null;
+    surname?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    course?: CoursesEnum | null;
+    course_format?: FormatsEnum | null;
+    course_type?: TypesEnum | null;
+    status?: StatusesEnum | null;
+    sum?: number | null;
+    alreadyPaid?: number | null;
+    age?: number | null;
+    group?: number | IGroup | null;
 }

@@ -36,21 +36,27 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const [groupMode, setGroupMode] = useState<"add" | "select">("add");
+
+    const [groupMode, setGroupMode] = useState<"add" | "select">(
+      order.group ? "select" : "add"
+    );
     const [value, setValue] = useState("");
 
-    const getGroupId = (group: number | IGroup | undefined): string | number => {
+    const getGroupId = (group: number | IGroup | null | undefined): string | number => {
         if (!group) return "";
-        return typeof group === 'object' ? group.id : group;
+        return typeof group === "object" ? group.id : group;
     };
 
     const handleClose = () => {
         const initialOrder = mapOrderToUpdate(order);
-        const hasOrderChanges = JSON.stringify(editedOrder) !== JSON.stringify(initialOrder);
+        const hasOrderChanges =
+          JSON.stringify(editedOrder) !== JSON.stringify(initialOrder);
         const hasUnsavedGroup = groupMode === "add" && value.trim() !== "";
 
         if (hasOrderChanges || hasUnsavedGroup) {
-            const isConfirmed = window.confirm("У вас є незбережені зміни. Ви впевнені, що хочете вийти без збереження?");
+            const isConfirmed = window.confirm(
+              "У вас є незбережені зміни. Ви впевнені, що хочете вийти без збереження?"
+            );
             if (!isConfirmed) {
                 return;
             }
@@ -65,17 +71,17 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
         }
         if (!value.trim()) return;
         try {
-            setErrors(prev => ({ ...prev, group: "" }));
+            setErrors((prev) => ({ ...prev, group: "" }));
 
             const newGroup = await dispatch(
-              groupActions.AddCreateGroup(value)
+              groupActions.AddCreateGroup(value.trim())
             ).unwrap();
 
             await dispatch(groupActions.fetchGroups());
 
-            setEditedOrder(prev => ({
+            setEditedOrder((prev) => ({
                 ...prev,
-                group: newGroup
+                group: newGroup.id,
             }));
 
             setGroupMode("select");
@@ -83,23 +89,25 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
         } catch (err: unknown) {
             const isApiError = (error: unknown): error is IApiError => {
                 return (
-                  typeof error === 'object' &&
+                  typeof error === "object" &&
                   error !== null &&
-                  ('message' in error || 'statusCode' in error)
+                  ("message" in error || "statusCode" in error)
                 );
             };
 
             let errorMessage = "Failed to create group";
 
             if (isApiError(err)) {
-                errorMessage = Array.isArray(err.message) ? err.message[0] : (err.message || errorMessage);
-            } else if (typeof err === 'string') {
+                errorMessage = Array.isArray(err.message)
+                  ? err.message[0]
+                  : err.message || errorMessage;
+            } else if (typeof err === "string") {
                 errorMessage = err;
             }
 
-            setErrors(prev => ({
+            setErrors((prev) => ({
                 ...prev,
-                group: errorMessage
+                group: errorMessage,
             }));
         }
     };
@@ -108,13 +116,14 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
         setGroupMode("select");
     };
 
-    const toNumberOrUndefined = (value: string) =>
-      value === "" ? undefined : Number(value);
+
+    const toNumberOrNull = (val: string): number | null =>
+      val === "" ? null : Number(val);
 
     const validateOrder = (): boolean => {
         const { error } = editOrderSchema.validate(editedOrder, {
             abortEarly: false,
-            stripUnknown: true
+            stripUnknown: true,
         });
 
         if (error) {
@@ -138,9 +147,9 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
         setGeneralError(null);
 
         if (groupMode === "add" && value.trim() !== "") {
-            setErrors(prev => ({
+            setErrors((prev) => ({
                 ...prev,
-                group: "Спочатку натисніть кнопку 'Add', щоб додати цю групу"
+                group: "Спочатку натисніть кнопку 'Add', щоб додати цю групу",
             }));
             return;
         }
@@ -148,13 +157,25 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
         if (validateOrder()) {
             setIsSubmitting(true);
             try {
-                const payload: IUpdateOrder = { ...editedOrder };
+                const payload: IUpdateOrder = {
+                    ...editedOrder,
+                    group:
+                      editedOrder.group && typeof editedOrder.group === "object"
+                        ? (editedOrder.group as IGroup).id
+                        : (editedOrder.group ?? null),
+                };
                 await onSubmit(payload);
             } catch (err: unknown) {
                 let errorMessage = "Failed to update order";
-                if (typeof err === "object" && err !== null && ("message" in err || "statusCode" in err)) {
+                if (
+                  typeof err === "object" &&
+                  err !== null &&
+                  ("message" in err || "statusCode" in err)
+                ) {
                     const apiErr = err as IApiError;
-                    errorMessage = Array.isArray(apiErr.message) ? apiErr.message[0] : (apiErr.message || errorMessage);
+                    errorMessage = Array.isArray(apiErr.message)
+                      ? apiErr.message[0]
+                      : apiErr.message || errorMessage;
                 } else if (typeof err === "string") {
                     errorMessage = err;
                 }
@@ -187,7 +208,9 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                 className="grid grid-cols-2 gap-4"
               >
                   <div>
-                      <label htmlFor="group" className="block mb-1 text-gray-700">Group</label>
+                      <label htmlFor="group" className="block mb-1 text-gray-700">
+                          Group
+                      </label>
                       {groupMode === "add" ? (
                         <Input
                           id="group"
@@ -195,7 +218,7 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                           onChange={(e) => {
                               setValue(e.target.value);
                               if (errors.group) {
-                                  setErrors(prev => ({ ...prev, group: "" }));
+                                  setErrors((prev) => ({ ...prev, group: "" }));
                               }
                           }}
                           className="w-full bg-gray-100 border-transparent px-3 py-2 rounded-md focus:outline-none"
@@ -205,30 +228,35 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         <select
                           value={getGroupId(editedOrder.group)}
                           onChange={(e) => {
-                              const groupId = Number(e.target.value) || undefined;
-                              setEditedOrder(prev => ({
+                              const rawVal = e.target.value;
+                              const groupId = rawVal === "" ? null : Number(rawVal);
+                              setEditedOrder((prev) => ({
                                   ...prev,
-                                  group: groupId
+                                  group: groupId as any,
                               }));
                           }}
                           className="w-full bg-gray-100 border-transparent px-3 py-2 rounded-md focus:outline-none"
                         >
-                            <option value="">Select group</option>
-                            {groups.map(group => (
+                            <option value="">No group</option>
+                            {groups.map((group) => (
                               <option key={group.id} value={group.id}>
                                   {group.name}
                               </option>
                             ))}
                         </select>
                       )}
-                      {errors.group && <span className="text-red-500 text-xs">{errors.group}</span>}
+                      {errors.group && (
+                        <span className="text-red-500 text-xs">{errors.group}</span>
+                      )}
 
                       <div className="flex w-full gap-1 mt-1">
                           <button
                             type="button"
                             onClick={handleAdd}
                             className={`flex-1 py-1.5 text-xs font-semibold uppercase tracking-wide rounded-[4px] text-white transition-colors ${
-                              groupMode === 'add' ? 'bg-[#388e3c] shadow-inner' : 'bg-[#43a047] hover:bg-[#388e3c]'
+                              groupMode === "add"
+                                ? "bg-[#388e3c] shadow-inner"
+                                : "bg-[#43a047] hover:bg-[#388e3c]"
                             }`}
                           >
                               Add
@@ -238,7 +266,9 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                             type="button"
                             onClick={handleSelect}
                             className={`flex-1 py-1.5 text-xs font-semibold uppercase tracking-wide rounded-[4px] text-white transition-colors ${
-                              groupMode === 'select' ? 'bg-[#388e3c] shadow-inner' : 'bg-[#43a047] hover:bg-[#388e3c]'
+                              groupMode === "select"
+                                ? "bg-[#388e3c] shadow-inner"
+                                : "bg-[#43a047] hover:bg-[#388e3c]"
                             }`}
                           >
                               Select
@@ -254,10 +284,15 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         options={Object.values(StatusesEnum)}
                         placeholder="All statuses"
                         onChange={(status) =>
-                          setEditedOrder(prev => ({ ...prev, status }))
+                          setEditedOrder((prev) => ({
+                              ...prev,
+                              status: (status || null) as any,
+                          }))
                         }
                       />
-                      {errors.status && <span className="text-red-500 text-xs">{errors.status}</span>}
+                      {errors.status && (
+                        <span className="text-red-500 text-xs">{errors.status}</span>
+                      )}
                   </div>
 
                   <div>
@@ -266,7 +301,7 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         id="name"
                         value={editedOrder.name ?? ""}
                         onChange={(e) =>
-                          setEditedOrder(prev => ({
+                          setEditedOrder((prev) => ({
                               ...prev,
                               name: e.target.value,
                           }))
@@ -274,7 +309,9 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         className="w-full border px-3 py-2"
                         placeholder="Name"
                       />
-                      {errors.name && <span className="text-red-500 text-xs">{errors.name}</span>}
+                      {errors.name && (
+                        <span className="text-red-500 text-xs">{errors.name}</span>
+                      )}
                   </div>
 
                   <div>
@@ -285,15 +322,17 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         min="0"
                         value={editedOrder.sum ?? ""}
                         onChange={(e) =>
-                          setEditedOrder(prev => ({
+                          setEditedOrder((prev) => ({
                               ...prev,
-                              sum: toNumberOrUndefined(e.target.value),
+                              sum: toNumberOrNull(e.target.value) as any,
                           }))
                         }
                         className="w-full border px-3 py-2"
                         placeholder="Sum"
                       />
-                      {errors.sum && <span className="text-red-500 text-xs">{errors.sum}</span>}
+                      {errors.sum && (
+                        <span className="text-red-500 text-xs">{errors.sum}</span>
+                      )}
                   </div>
 
                   <div>
@@ -302,7 +341,7 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         id="surname"
                         value={editedOrder.surname ?? ""}
                         onChange={(e) =>
-                          setEditedOrder(prev => ({
+                          setEditedOrder((prev) => ({
                               ...prev,
                               surname: e.target.value,
                           }))
@@ -310,7 +349,9 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         className="w-full border px-3 py-2"
                         placeholder="Surname"
                       />
-                      {errors.surname && <span className="text-red-500 text-xs">{errors.surname}</span>}
+                      {errors.surname && (
+                        <span className="text-red-500 text-xs">{errors.surname}</span>
+                      )}
                   </div>
 
                   <div>
@@ -321,15 +362,19 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         min="0"
                         value={editedOrder.alreadyPaid ?? ""}
                         onChange={(e) =>
-                          setEditedOrder(prev => ({
+                          setEditedOrder((prev) => ({
                               ...prev,
-                              alreadyPaid: toNumberOrUndefined(e.target.value),
+                              alreadyPaid: toNumberOrNull(e.target.value) as any,
                           }))
                         }
                         className="w-full border px-3 py-2"
                         placeholder="Already Paid"
                       />
-                      {errors.alreadyPaid && <span className="text-red-500 text-xs">{errors.alreadyPaid}</span>}
+                      {errors.alreadyPaid && (
+                        <span className="text-red-500 text-xs">
+                                {errors.alreadyPaid}
+                            </span>
+                      )}
                   </div>
 
                   <div>
@@ -338,7 +383,7 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         id="email"
                         value={editedOrder.email ?? ""}
                         onChange={(e) =>
-                          setEditedOrder(prev => ({
+                          setEditedOrder((prev) => ({
                               ...prev,
                               email: e.target.value,
                           }))
@@ -346,7 +391,9 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         className="w-full border px-3 py-2"
                         placeholder="Email"
                       />
-                      {errors.email && <span className="text-red-500 text-xs">{errors.email}</span>}
+                      {errors.email && (
+                        <span className="text-red-500 text-xs">{errors.email}</span>
+                      )}
                   </div>
 
                   <div>
@@ -357,10 +404,15 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         options={Object.values(CoursesEnum)}
                         placeholder="All course"
                         onChange={(course) =>
-                          setEditedOrder(prev => ({ ...prev, course }))
+                          setEditedOrder((prev) => ({
+                              ...prev,
+                              course: (course || null) as any,
+                          }))
                         }
                       />
-                      {errors.course && <span className="text-red-500 text-xs">{errors.course}</span>}
+                      {errors.course && (
+                        <span className="text-red-500 text-xs">{errors.course}</span>
+                      )}
                   </div>
 
                   <div>
@@ -370,7 +422,7 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         maxLength={12}
                         value={editedOrder.phone ?? ""}
                         onChange={(e) =>
-                          setEditedOrder(prev => ({
+                          setEditedOrder((prev) => ({
                               ...prev,
                               phone: e.target.value,
                           }))
@@ -378,7 +430,9 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         className="w-full border px-3 py-2"
                         placeholder="Phone"
                       />
-                      {errors.phone && <span className="text-red-500 text-xs">{errors.phone}</span>}
+                      {errors.phone && (
+                        <span className="text-red-500 text-xs">{errors.phone}</span>
+                      )}
                   </div>
 
                   <div>
@@ -389,10 +443,17 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         options={Object.values(FormatsEnum)}
                         placeholder="All format"
                         onChange={(course_format) =>
-                          setEditedOrder(prev => ({ ...prev, course_format }))
+                          setEditedOrder((prev) => ({
+                              ...prev,
+                              course_format: (course_format || null) as any,
+                          }))
                         }
                       />
-                      {errors.course_format && <span className="text-red-500 text-xs">{errors.course_format}</span>}
+                      {errors.course_format && (
+                        <span className="text-red-500 text-xs">
+                                {errors.course_format}
+                            </span>
+                      )}
                   </div>
 
                   <div>
@@ -403,15 +464,17 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         min="1"
                         value={editedOrder.age ?? ""}
                         onChange={(e) =>
-                          setEditedOrder(prev => ({
+                          setEditedOrder((prev) => ({
                               ...prev,
-                              age: toNumberOrUndefined(e.target.value),
+                              age: toNumberOrNull(e.target.value) as any,
                           }))
                         }
                         className="w-full border px-3 py-2"
                         placeholder="Age"
                       />
-                      {errors.age && <span className="text-red-500 text-xs">{errors.age}</span>}
+                      {errors.age && (
+                        <span className="text-red-500 text-xs">{errors.age}</span>
+                      )}
                   </div>
 
                   <div>
@@ -422,10 +485,17 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         options={Object.values(TypesEnum)}
                         placeholder="All type"
                         onChange={(course_type) =>
-                          setEditedOrder(prev => ({ ...prev, course_type }))
+                          setEditedOrder((prev) => ({
+                              ...prev,
+                              course_type: (course_type || null) as any,
+                          }))
                         }
                       />
-                      {errors.course_type && <span className="text-red-500 text-xs">{errors.course_type}</span>}
+                      {errors.course_type && (
+                        <span className="text-red-500 text-xs">
+                                {errors.course_type}
+                            </span>
+                      )}
                   </div>
 
                   <div></div>

@@ -38,14 +38,15 @@ export class UsersService {
 
     const skip = (validPage - 1) * validLimit;
 
-    const [items, totalItems] = await this.usersRepository.findAndCount({
-      select: ['id', 'name', 'surname', 'email', 'isActive', 'lastLogin'],
+    const [users, totalItems] = await this.usersRepository.findAndCount({
       order: { id: 'desc' },
       take: validLimit,
       skip: skip,
     });
 
-    return { items: items as unknown as UserBaseResDto[], totalItems };
+    const items = users.map((user) => UserMapper.toResDto(user));
+
+    return { items, totalItems };
   }
 
   async updateById(

@@ -18,20 +18,20 @@ export class CreateManagerReqDto {
 
   @ApiProperty({ example: 'Ivan' })
   @IsString()
-  @Length(2, 50)
+  @Length(2, 25)
   @Transform(TransformHelper.trim)
   name!: string;
 
   @ApiProperty({ example: 'Petrenko' })
   @IsString()
-  @Length(2, 50)
+  @Length(2, 25)
   @Transform(TransformHelper.trim)
   surname!: string;
 
   @ApiPropertyOptional({ example: 'ivan_p' })
   @IsOptional()
   @IsString()
-  @Length(3, 50)
+  @Length(3, 25)
   @Transform(TransformHelper.trim)
   username?: string;
 

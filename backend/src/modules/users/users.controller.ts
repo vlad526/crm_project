@@ -17,8 +17,8 @@ import { UsersService } from './services/users.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRoleEnum } from '../../database/entities/enums/user-role.enum';
 import { UserEntity } from '../../database/entities/user.entity';
-import type { UserRequest } from '../auth/intefaces/user-request.interface';
 import { IUsersRequestDto } from './models/dto/users.req.dto';
+import { CurrentUser } from '../../common/decorators/user.decorator';
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
@@ -28,8 +28,8 @@ export class UsersController {
 
   @Roles(UserRoleEnum.MANAGER, UserRoleEnum.ADMIN)
   @Get('profile')
-  async getProfile(@Request() req: UserRequest): Promise<UserEntity | null> {
-    return await this.usersService.findById(req.user!.userId);
+  async getProfile(@CurrentUser('id') userId: number): Promise<UserEntity | null> {
+    return await this.usersService.findById(userId);
   }
 
   @Roles(UserRoleEnum.ADMIN)

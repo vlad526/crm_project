@@ -31,17 +31,24 @@ export class AdminService {
   ) {}
 
   async createManager(dto: CreateManagerReqDto): Promise<UserBaseResDto> {
-
-    const username = dto.username || dto.email;
-
-    const existingUser = await this.usersRepository.findOne({
-      where: [{ username }, { email: dto.email }],
+    const existingByEmail = await this.usersRepository.findOne({
+      where: { email: dto.email },
     });
 
-    if (existingUser) {
-      throw new ConflictException(
-        'Користувач з таким логіном або email вже існує',
-      );
+    if (existingByEmail) {
+      throw new ConflictException('Користувач з таким email вже існує');
+    }
+
+    let baseUsername = (dto.username || dto.email.split('@')[0]).slice(0, 20);
+    let username = baseUsername;
+
+    const existingByUsername = await this.usersRepository.findOne({
+      where: { username },
+    });
+
+    if (existingByUsername) {
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      username = `${baseUsername}_${randomSuffix}`.slice(0, 25);
     }
 
     const basePassword = await bcrypt.hash(Math.random().toString(36), 10);

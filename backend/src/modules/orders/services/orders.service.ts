@@ -136,6 +136,11 @@ export class OrdersService {
     const { sortBy, sortOrder } = parseOrder(order);
     queryBuilder.orderBy(`order.${sortBy}`, sortOrder);
 
+
+    if (sortBy !== 'id') {
+      queryBuilder.addOrderBy('order.id', 'DESC');
+    }
+
     const numericPage = Number(page);
     const numericLimit = Number(limit);
 
@@ -315,51 +320,92 @@ export class OrdersService {
     currentUser: UserEntity,
     updateData: UpdateOrderDto,
   ): Promise<ResponseOrderDto> {
-    const targetedOrder = await this.ordersRepository.findOne({
-      where: { id },
-      relations: ['manager'],
-    });
+    return this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        const orderRepository =
+          transactionalEntityManager.getRepository(OrderEntity);
+        const groupRepository =
+          transactionalEntityManager.getRepository(GroupEntity);
 
-    if (!targetedOrder) {
-      throw new NotFoundException('Order not found');
-    }
+        const targetedOrder = await orderRepository.findOne({
+          where: { id },
+          relations: ['manager', 'group'],
+          lock: { mode: 'pessimistic_write' },
+        });
+
+        if (!targetedOrder) {
+          throw new NotFoundException('Order not found');
+        }
 
 
-    if (targetedOrder.manager) {
-      const isOwner = Number(targetedOrder.manager.id) === Number(currentUser.id);
-      if (!isOwner) {
-        throw new ForbiddenException(
-          'This application is already assigned to a manager and cannot be edited by anyone else',
-        );
-      }
-    } else {
-      targetedOrder.manager = currentUser;
-      if (!targetedOrder.status || targetedOrder.status === StatusesEnum.NEW) {
-        targetedOrder.status = StatusesEnum.INWORK;
-      }
-    }
+        if (targetedOrder.manager) {
+          const isOwner =
+            Number(targetedOrder.manager.id) === Number(currentUser.id);
+          if (!isOwner) {
+            throw new ForbiddenException(
+              'This application is already assigned to a manager and cannot be edited',
+            );
+          }
+        }
 
-    if (updateData.status === StatusesEnum.NEW) {
-      targetedOrder.manager = null as unknown as UserEntity;
-    } else if (updateData.manager) {
-      targetedOrder.manager = { id: updateData.manager } as UserEntity;
-    }
 
-    if (updateData.group) {
-      targetedOrder.group = { id: updateData.group } as GroupEntity;
-    }
+        if (updateData.status === StatusesEnum.NEW) {
+          targetedOrder.manager = null as unknown as UserEntity;
+        }
 
-    const { group: _group, manager: _manager, ...fieldsToUpdate } = updateData;
-    Object.assign(targetedOrder, fieldsToUpdate);
 
-    await this.ordersRepository.save(targetedOrder);
+        if (updateData.group !== undefined) {
+          if (updateData.group === null || (updateData.group as any) === '') {
+            targetedOrder.group = null as unknown as GroupEntity;
+          } else {
+            const existingGroup = await groupRepository.findOneBy({
+              id: Number(updateData.group),
+            });
+            if (!existingGroup) {
+              throw new NotFoundException(
+                `Group with ID ${updateData.group} was not found`,
+              );
+            }
+            targetedOrder.group = existingGroup;
+          }
+        }
 
-    const updatedOrder = await this.ordersRepository.findOne({
-      where: { id },
-      relations: ['group', 'manager'],
-    });
 
-    return OrdersMapper.toResDto(updatedOrder!);
+        const {
+          group: _group,
+          manager: _manager,
+          ...fieldsToUpdate
+        } = updateData as any;
+
+
+        const nullableFields = [
+          'course',
+          'course_format',
+          'course_type',
+          'status',
+          'name',
+          'surname',
+          'email',
+          'phone',
+        ];
+        for (const key of nullableFields) {
+          if (fieldsToUpdate[key] === '') {
+            fieldsToUpdate[key] = null;
+          }
+        }
+
+        Object.assign(targetedOrder, fieldsToUpdate);
+
+        await orderRepository.save(targetedOrder);
+
+        const updatedOrder = await orderRepository.findOne({
+          where: { id },
+          relations: ['group', 'manager'],
+        });
+
+        return OrdersMapper.toResDto(updatedOrder!);
+      },
+    );
   }
 
   async delete(id: string): Promise<void> {
@@ -372,6 +418,12 @@ export class OrdersService {
 
   async exportToExcel(query: OrdersQueryDto, userId: number) {
     const queryBuilder = this.getFilteredObjects(query, userId);
+
+    const { sortBy, sortOrder } = parseOrder(query.order);
+    queryBuilder.orderBy(`order.${sortBy}`, sortOrder);
+    if (sortBy !== 'id') {
+      queryBuilder.addOrderBy('order.id', 'DESC');
+    }
 
     queryBuilder.take(5000);
     const ordersToExport = await queryBuilder.getMany();

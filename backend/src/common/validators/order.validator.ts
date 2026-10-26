@@ -5,11 +5,16 @@ import { FormatsEnum } from '../../database/entities/enums/formats.enum';
 import { TypesEnum } from '../../database/entities/enums/types.enum';
 
 const editOrderSchema = Joi.object({
-  name: Joi.string().min(0).max(50).allow(null, '').optional(),
+  name: Joi.string().min(0).max(25).allow(null, '').optional().messages({
+    'string.max': 'Name must not exceed 25 characters',
+  }),
 
-  surname: Joi.string().min(0).max(50).allow(null, '').optional(),
+  surname: Joi.string().min(0).max(25).allow(null, '').optional().messages({
+    'string.max': 'Surname must not exceed 25 characters',
+  }),
 
   email: Joi.string()
+    .max(100)
     .email({ tlds: { allow: false } })
     .empty('')
     .allow(null, '')
@@ -27,12 +32,13 @@ const editOrderSchema = Joi.object({
         'Please enter a valid phone number (up to 12 characters)',
     }),
 
-  age: Joi.number().integer().min(0).max(99).allow(null).optional(),
+  age: Joi.number().integer().min(0).max(99).empty('').allow(null).optional(),
 
-  sum: Joi.number().min(0).allow(null).optional(),
+  sum: Joi.number().min(0).empty('').allow(null).optional(),
 
   alreadyPaid: Joi.number()
     .min(0)
+    .empty('')
     .allow(null)
     .optional()
     .when('sum', {
@@ -48,24 +54,31 @@ const editOrderSchema = Joi.object({
       'any.only': `Status must be one of: ${Object.values(StatusesEnum).join(', ')}`,
     }),
 
-  group: Joi.any().allow(null).optional(),
+  group: Joi.number().integer().positive().empty('').allow(null, '').optional(),
 
   course: Joi.string()
     .valid(...Object.values(CoursesEnum))
     .allow(null, '')
-    .optional(),
+    .optional()
+    .messages({
+      'any.only': `Course must be one of: ${Object.values(CoursesEnum).join(', ')}`,
+    }),
 
   course_format: Joi.string()
     .valid(...Object.values(FormatsEnum))
     .allow(null, '')
-    .optional(),
+    .optional()
+    .messages({
+      'any.only': `Course format must be one of: ${Object.values(FormatsEnum).join(', ')}`,
+    }),
 
   course_type: Joi.string()
     .valid(...Object.values(TypesEnum))
     .allow(null, '')
-    .optional(),
-
-  manager: Joi.number().allow(null).optional(),
+    .optional()
+    .messages({
+      'any.only': `Course type must be one of: ${Object.values(TypesEnum).join(', ')}`,
+    }),
 });
 
 export default editOrderSchema;

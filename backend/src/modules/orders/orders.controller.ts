@@ -102,12 +102,9 @@ export class OrdersController {
   @Patch(':id/take')
   async takeOrder(
     @Param('id') id: string,
-    @Req() req: userRequestInterface.UserRequest,
+    @CurrentUser('id') userId: number,
   ) {
-    if (!req.user) {
-      throw new UnauthorizedException('User is not attached to the request');
-    }
-    return await this.ordersService.takeOrder(id, req.user.userId);
+    return await this.ordersService.takeOrder(id, userId);
   }
 
   @Roles(UserRoleEnum.ADMIN)
