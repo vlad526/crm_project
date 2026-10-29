@@ -1,7 +1,7 @@
 export const CoursesEnum = {
   FS : 'FS',
   QACX : 'QACX',
-  JCX : 'JSX',
+  JCX : 'JCX',
   JSCX : 'JSCX',
   FE : 'FE',
   PCX : 'PCX',
