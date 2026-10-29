@@ -5,10 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UsersRepository } from '../../../repository/services/users.repository';
-import { IUsersRequestDto } from '../models/dto/users.req.dto';
 import { UserEntity } from '../../../database/entities/user.entity';
 import { UserBaseResDto } from '../models/dto/res/users-base-res';
-import { UpdateUserReqDto } from '../models/dto/update.req.dto';
 import { UserRoleEnum } from '../../../database/entities/enums/user-role.enum';
 import { UserMapper } from '../user.mapper';
 import { UserResDto } from '../models/dto/res/user.res.dto';
@@ -16,11 +14,6 @@ import { UserResDto } from '../models/dto/res/user.res.dto';
 @Injectable()
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
-
-  async create(dto: IUsersRequestDto): Promise<UserEntity> {
-    const newUser = this.usersRepository.create(dto);
-    return this.usersRepository.save(newUser);
-  }
 
   async findById(managerId: number): Promise<UserEntity | null> {
     return await this.usersRepository.findOne({
@@ -47,14 +40,6 @@ export class UsersService {
     const items = users.map((user) => UserMapper.toResDto(user));
 
     return { items, totalItems };
-  }
-
-  async updateById(
-    id: number,
-    dto: UpdateUserReqDto,
-  ): Promise<UserEntity | null> {
-    await this.usersRepository.update({ id }, dto);
-    return this.usersRepository.findOneBy({ id });
   }
 
   async disable(idToBan: number, currentUser: UserResDto): Promise<UserResDto> {
@@ -106,12 +91,5 @@ export class UsersService {
     const updatedUser = await this.usersRepository.save(targetUser);
 
     return UserMapper.toResDto(updatedUser);
-  }
-
-  async delete(id: number): Promise<void> {
-    const result = await this.usersRepository.delete(id);
-    if (!result.affected) {
-      throw new NotFoundException(`User with id ${id} not found`);
-    }
   }
 }

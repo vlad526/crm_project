@@ -10,6 +10,7 @@ type EnumSelectProps<T extends string> = {
 };
 
 export const EnumSelect = <T extends string>({
+                                               id,
                                                className = "",
                                                value,
                                                onChange,
@@ -18,6 +19,7 @@ export const EnumSelect = <T extends string>({
                                              }: EnumSelectProps<T>) => {
   return (
     <select
+      id={id}
       className={`${baseFieldClass} ${className}`}
       value={value ?? ""}
       onChange={(e) =>
@@ -29,7 +31,7 @@ export const EnumSelect = <T extends string>({
       }
     >
       <option value="">{placeholder}</option>
-      {options.map(option => (
+      {options.map((option) => (
         <option key={option} value={option}>
           {option}
         </option>

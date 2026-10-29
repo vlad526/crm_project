@@ -126,7 +126,3 @@ export const getGroups = async () => {
     return res;
 };
 
-export const getGroupById = async (id: number) => {
-    const { data: res } = await axiosInstance.get<IGroup>(`/groups/${id}`);
-    return res;
-};

@@ -39,6 +39,7 @@ DB_PORT=порт_бд
 DB_USERNAME=користувач_бд
 DB_PASSWORD=пароль_бд
 DB_DATABASE=назва_бд
+DB_SSL=true
 
 
 6. Міграції бази даних та створення Суперадміна

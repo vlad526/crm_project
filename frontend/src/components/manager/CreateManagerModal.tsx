@@ -71,8 +71,11 @@ export const CreateManagerModal: FC<CreateManagerModalProps> = ({ isOpen, onClos
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
                   <div className="flex flex-col">
-                      <label className="text-xl font-semibold text-gray-800">Email</label>
+                      <label htmlFor="manager-email" className="text-xl font-semibold text-gray-800">
+                          Email
+                      </label>
                       <input
+                        id="manager-email"
                         type="email"
                         autoFocus
                         {...register("email", {
@@ -91,8 +94,12 @@ export const CreateManagerModal: FC<CreateManagerModalProps> = ({ isOpen, onClos
                   </div>
 
                   <div className="flex flex-col">
-                      <label className="text-xl font-semibold text-gray-800">Name</label>
+                      <label htmlFor="manager-name" className="text-xl font-semibold text-gray-800">
+                          Name
+                      </label>
                       <input
+                        id="manager-name"
+                        type="text"
                         {...register("name", { required: "Name is required" })}
                         className={`bg-gray-50 p-3 rounded mt-2 border outline-none focus:ring-2 focus:ring-green-400 transition-colors ${
                           errors.name ? 'border-red-500' : 'border-gray-200'
@@ -103,8 +110,12 @@ export const CreateManagerModal: FC<CreateManagerModalProps> = ({ isOpen, onClos
                   </div>
 
                   <div className="flex flex-col">
-                      <label className="text-xl font-semibold text-gray-800">Surname</label>
+                      <label htmlFor="manager-surname" className="text-xl font-semibold text-gray-800">
+                          Surname
+                      </label>
                       <input
+                        id="manager-surname"
+                        type="text"
                         {...register("surname", { required: "Surname is required" })}
                         className={`bg-gray-50 p-3 rounded mt-2 border outline-none focus:ring-2 focus:ring-green-400 transition-colors ${
                           errors.surname ? 'border-red-500' : 'border-gray-200'

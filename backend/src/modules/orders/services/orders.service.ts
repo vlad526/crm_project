@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -8,7 +7,6 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { OrdersQueryDto } from '../dto/req/order.query.dto';
 import { OrdersRepository } from '../../../repository/services/orders.repository';
-import { CreateOrderDto } from '../dto/req/create.order.dto';
 import { ResponseOrderDto } from '../dto/res/res.order.dto';
 import { StatusesEnum } from '../../../database/entities/enums/statuses.enum';
 import { OrdersMapper } from '../orders.mapper';
@@ -117,15 +115,6 @@ export class OrdersService {
     return queryBuilder;
   }
 
-  async create(orderdto: CreateOrderDto): Promise<ResponseOrderDto> {
-    const order = this.ordersRepository.create({
-      ...orderdto,
-      status: StatusesEnum.NEW,
-    });
-    const saveOrder = await this.ordersRepository.save(order);
-    return OrdersMapper.toResDto(saveOrder);
-  }
-
   async findAll(
     query: OrdersQueryDto,
     userId: number,
@@ -135,7 +124,6 @@ export class OrdersService {
 
     const { sortBy, sortOrder } = parseOrder(order);
     queryBuilder.orderBy(`order.${sortBy}`, sortOrder);
-
 
     if (sortBy !== 'id') {
       queryBuilder.addOrderBy('order.id', 'DESC');
@@ -159,81 +147,6 @@ export class OrdersService {
       page: numericPage,
       limit: numericLimit,
     };
-  }
-
-  async findOne(id: string): Promise<ResponseOrderDto> {
-    const findOrder = await this.ordersRepository.findOne({
-      where: { id },
-      relations: ['group', 'manager'],
-    });
-    if (!findOrder) {
-      throw new NotFoundException('Order not found');
-    }
-    return OrdersMapper.toResDto(findOrder);
-  }
-
-  async assignManager(orderId: string, managerId: number) {
-    return this.entityManager.transaction(
-      async (transactionalEntityManager) => {
-        const orderRepository =
-          transactionalEntityManager.getRepository(OrderEntity);
-
-        const targetedOrder = await orderRepository.findOne({
-          where: { id: orderId },
-          lock: { mode: 'pessimistic_write' },
-        });
-        if (!targetedOrder) {
-          throw new NotFoundException('Order not found');
-        }
-
-        const userRepository =
-          transactionalEntityManager.getRepository(UserEntity);
-        const targetedManager = await userRepository.findOneBy({
-          id: managerId,
-        });
-        if (!targetedManager) {
-          throw new NotFoundException('Manager was not found');
-        }
-
-        targetedOrder.manager = targetedManager;
-
-        if (
-          targetedOrder.status === StatusesEnum.NEW ||
-          !targetedOrder.status
-        ) {
-          targetedOrder.status = StatusesEnum.INWORK;
-        }
-        return orderRepository.save(targetedOrder);
-      },
-    );
-  }
-
-  async takeOrder(orderId: string, managerId: number) {
-    return this.entityManager.transaction(
-      async (transactionalEntityManager) => {
-        const orderRepository =
-          transactionalEntityManager.getRepository(OrderEntity);
-
-        const targetedOrder = await orderRepository.findOne({
-          where: { id: orderId },
-          relations: ['manager'],
-          lock: { mode: 'pessimistic_write' },
-        });
-
-        if (!targetedOrder) {
-          throw new NotFoundException('Order not found');
-        }
-
-        if (targetedOrder.manager) {
-          throw new BadRequestException('Order is already assigned');
-        }
-
-        targetedOrder.manager = { id: managerId } as UserEntity;
-        targetedOrder.status = StatusesEnum.INWORK;
-
-        return await orderRepository.save(targetedOrder);
-      },
-    );
   }
 
   async getStatsByStatus(): Promise<OrdersStatsDto> {
@@ -337,7 +250,6 @@ export class OrdersService {
           throw new NotFoundException('Order not found');
         }
 
-
         if (targetedOrder.manager) {
           const isOwner =
             Number(targetedOrder.manager.id) === Number(currentUser.id);
@@ -346,13 +258,16 @@ export class OrdersService {
               'This application is already assigned to a manager and cannot be edited',
             );
           }
+        } else {
+          targetedOrder.manager = currentUser;
+          if (!updateData.status || updateData.status === StatusesEnum.NEW) {
+            updateData.status = StatusesEnum.INWORK;
+          }
         }
-
 
         if (updateData.status === StatusesEnum.NEW) {
           targetedOrder.manager = null as unknown as UserEntity;
         }
-
 
         if (updateData.group !== undefined) {
           if (updateData.group === null || (updateData.group as any) === '') {
@@ -370,13 +285,11 @@ export class OrdersService {
           }
         }
 
-
         const {
           group: _group,
           manager: _manager,
           ...fieldsToUpdate
         } = updateData as any;
-
 
         const nullableFields = [
           'course',
@@ -406,14 +319,6 @@ export class OrdersService {
         return OrdersMapper.toResDto(updatedOrder!);
       },
     );
-  }
-
-  async delete(id: string): Promise<void> {
-    const deleteResult = await this.ordersRepository.delete(id);
-
-    if (!deleteResult.affected) {
-      throw new NotFoundException(`Order #${id} was not found`);
-    }
   }
 
   async exportToExcel(query: OrdersQueryDto, userId: number) {

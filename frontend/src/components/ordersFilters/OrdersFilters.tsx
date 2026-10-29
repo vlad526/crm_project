@@ -126,12 +126,12 @@ const OrdersFilters = () => {
                 }
               >
                   <option value="">all courses</option>
-                  <option value="fs">FS</option>
-                  <option value="qacx">QACX</option>
-                  <option value="jcx">JCX</option>
-                  <option value="jscx">JSCX</option>
-                  <option value="fe">FE</option>
-                  <option value="pcx">PCX</option>
+                  <option value="FS">FS</option>
+                  <option value="QACX">QACX</option>
+                  <option value="JCX">JCX</option>
+                  <option value="JSCX">JSCX</option>
+                  <option value="FE">FE</option>
+                  <option value="PCX">PCX</option>
               </Select>
 
               <Select

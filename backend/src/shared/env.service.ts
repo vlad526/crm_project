@@ -11,48 +11,31 @@ export class EnvService {
   public readonly mysqlUser: string;
   public readonly mysqlPassword: string;
   public readonly dbSsl: boolean;
-
   public readonly jwtAccessSecret: string;
   public readonly jwtRefreshSecret: string;
   public readonly accessTokenExpirationTime: number;
   public readonly refreshTokenExpirationTime: number;
-
   public readonly adminEmail: string;
   public readonly adminPassword: string;
 
   constructor(private configService: ConfigService) {
     this.db_Type = this.configService.get<string>('DB_TYPE') || 'mysql';
 
-    this.mysqlHost =
-      this.configService.get<string>('MYSQL_HOST') ||
-      this.configService.get<string>('DB_HOST') ||
-      '127.0.0.1';
+    this.mysqlHost = this.configService.get<string>('DB_HOST') || '127.0.0.1';
 
     this.mysqlPort = parseInt(
-      this.configService.get<string>('MYSQL_PORT') ||
-      this.configService.get<string>('DB_PORT') ||
-      '3306',
+      this.configService.get<string>('DB_PORT') || '3306',
       10,
     );
 
     this.mysqlDatabase =
-      this.configService.get<string>('MYSQL_DATABASE') ||
-      this.configService.get<string>('DB_NAME') ||
-      'defaultdb';
+      this.configService.get<string>('DB_DATABASE') || 'defaultdb';
 
-    this.mysqlUser =
-      this.configService.get<string>('MYSQL_USER') ||
-      this.configService.get<string>('DB_USERNAME') ||
-      'avnadmin';
+    this.mysqlUser = this.configService.get<string>('DB_USERNAME') || 'root';
 
-    this.mysqlPassword =
-      this.configService.get<string>('MYSQL_PASSWORD') ||
-      this.configService.get<string>('DB_PASSWORD') ||
-      '';
+    this.mysqlPassword = this.configService.get<string>('DB_PASSWORD') || '';
 
-    this.dbSsl =
-      this.configService.get<string>('DB_SSL') === 'true' ||
-      this.configService.get<string>('MYSQL_SSL') === 'true';
+    this.dbSsl = this.configService.get<string>('DB_SSL') === 'true';
 
     this.jwtAccessSecret =
       this.configService.get<string>('JWT_ACCESS_SECRET') || '';

@@ -7,7 +7,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersRepository } from '../../../repository/services/users.repository';
-import { TokenRepository } from '../../../repository/services/token.repository';
 import { JwtService } from '@nestjs/jwt';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
@@ -15,8 +14,6 @@ import { LoginReqDto } from '../dto/req/login.req.dto';
 import { UserEntity } from '../../../database/entities/user.entity';
 import { TokenEntity } from '../../../database/entities/token.entity';
 import { ITokens } from '../intefaces/token.interface';
-import { RefreshTokenDto } from '../models/refresh-token.dto';
-import { IJwtPayload } from '../intefaces/jwt-payload.interface';
 import { ActivateDto } from '../dto/req/activate.token.dto';
 import { IActionTokenPayload } from '../intefaces/IAction-token-payload.interface';
 import bcrypt from 'bcrypt';
@@ -32,7 +29,6 @@ export class AuthService {
 
   constructor(
     private readonly usersRepository: UsersRepository,
-    private readonly tokenRepository: TokenRepository,
     private readonly emailService: EmailService,
     private readonly jwtService: JwtService,
     private readonly envService: EnvService,
@@ -77,73 +73,6 @@ export class AuthService {
         .update(validUser.id, { lastLogin: new Date() });
 
       return { accessToken, refreshToken };
-    });
-  }
-
-  async refresh(refreshDTO: RefreshTokenDto): Promise<ITokens> {
-    const { refreshToken } = refreshDTO;
-    return this.entityManager.transaction(async (manager) => {
-      const tokenRepository = manager.getRepository(TokenEntity);
-
-      try {
-        this.jwtService.verify<IJwtPayload>(refreshToken, {
-          secret: this.envService.jwtRefreshSecret,
-        });
-      } catch {
-        throw new UnauthorizedException('invalid or expired refresh token');
-      }
-
-      const activeTokenEntity = await tokenRepository.findOne({
-        where: { refreshToken, isBlocked: false },
-        relations: ['user'],
-      });
-
-      if (
-        !activeTokenEntity ||
-        !activeTokenEntity.user ||
-        activeTokenEntity.refreshTokenExpiresAt < new Date()
-      ) {
-        throw new UnauthorizedException('invalid or expired refresh token');
-      }
-
-      if (!activeTokenEntity.user.isActive) {
-        activeTokenEntity.isBlocked = true;
-        await tokenRepository.save(activeTokenEntity);
-        throw new ForbiddenException('User account is inactive');
-      }
-
-      activeTokenEntity.isBlocked = true;
-      await tokenRepository.save(activeTokenEntity);
-
-      const jti = Math.random().toString(36).substring(2);
-      const newPayload = {
-        userId: activeTokenEntity.user.id,
-        username: activeTokenEntity.user.username,
-        role: activeTokenEntity.user.role,
-        jti,
-      };
-
-      const newAccessToken = this.jwtService.sign(newPayload, {
-        secret: this.envService.jwtAccessSecret,
-        expiresIn: this.envService.accessTokenExpirationTime,
-      });
-
-      const newRefreshToken = this.jwtService.sign(newPayload, {
-        secret: this.envService.jwtRefreshSecret,
-        expiresIn: this.envService.refreshTokenExpirationTime,
-      });
-
-      await this.saveTokens(
-        manager,
-        activeTokenEntity.user,
-        newAccessToken,
-        newRefreshToken,
-        this.envService.accessTokenExpirationTime,
-        this.envService.refreshTokenExpirationTime,
-        jti,
-      );
-
-      return { accessToken: newAccessToken, refreshToken: newRefreshToken };
     });
   }
 
@@ -230,17 +159,6 @@ export class AuthService {
       .catch((err) => this.logger.error('Welcome email failed to send', err));
 
     return { message: 'Password recovery completed' };
-  }
-
-  async logOut(refreshTokenDto: RefreshTokenDto): Promise<void> {
-    const { refreshToken } = refreshTokenDto;
-    const tokenEntity = await this.tokenRepository.findOne({
-      where: { refreshToken, isBlocked: false },
-    });
-    if (tokenEntity) {
-      tokenEntity.isBlocked = true;
-      await this.tokenRepository.save(tokenEntity);
-    }
   }
 
   async getMe(user: Partial<UserEntity>): Promise<UserResDto> {

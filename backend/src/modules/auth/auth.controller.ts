@@ -12,7 +12,6 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './services/auth.service';
 import { LoginReqDto } from './dto/req/login.req.dto';
-import { RefreshTokenDto } from './models/refresh-token.dto';
 import { ActivateDto } from './dto/req/activate.token.dto';
 import * as userRequestInterface from './intefaces/user-request.interface';
 import { AuthGuard } from '@nestjs/passport';
@@ -26,12 +25,6 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginReqDto) {
     return await this.authService.login(loginDto);
-  }
-
-  @Post('refresh')
-  @HttpCode(HttpStatus.OK)
-  async refresh(@Body() RefreshTokenDto: RefreshTokenDto) {
-    return await this.authService.refresh(RefreshTokenDto);
   }
 
   @Patch('activate')
@@ -52,10 +45,5 @@ export class AuthController {
   @Get('me')
   async getMe(@Req() req: userRequestInterface.UserRequest) {
     return await this.authService.getMe(req.user!);
-  }
-
-  @Post('logout')
-  async logout(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.logOut(refreshTokenDto);
   }
 }

@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { GroupRepository } from '../../../../repository/services/group.repository';
 import { GroupCreateDto } from '../../models/group-create.dto';
 import { GroupResDto } from '../../models/group-res.dto';
@@ -28,17 +24,5 @@ export class GroupService {
     return this.groupRepository.find({
       order: { name: 'ASC' },
     });
-  }
-
-  async findOne(id: number): Promise<GroupResDto> {
-    const group = await this.groupRepository.findOne({
-      where: { id },
-    });
-
-    if (!group) {
-      throw new NotFoundException(`Group with ID ${id} not found`);
-    }
-
-    return group;
   }
 }

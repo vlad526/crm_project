@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -30,11 +22,5 @@ export class GroupController {
   @Get()
   findAll(): Promise<GroupResDto[]> {
     return this.groupService.findAll();
-  }
-
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MANAGER)
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<GroupResDto | null> {
-    return this.groupService.findOne(id);
   }
 }

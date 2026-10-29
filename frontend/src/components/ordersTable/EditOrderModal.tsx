@@ -36,7 +36,6 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-
     const [groupMode, setGroupMode] = useState<"add" | "select">(
       order.group ? "select" : "add"
     );
@@ -115,7 +114,6 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
     const handleSelect = () => {
         setGroupMode("select");
     };
-
 
     const toNumberOrNull = (val: string): number | null =>
       val === "" ? null : Number(val);
@@ -226,6 +224,7 @@ export const EditOrderModal: FC<EditOrderModalProps> = ({
                         />
                       ) : (
                         <select
+                          id="group"
                           value={getGroupId(editedOrder.group)}
                           onChange={(e) => {
                               const rawVal = e.target.value;
