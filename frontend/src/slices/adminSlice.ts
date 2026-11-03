@@ -148,58 +148,25 @@ const adminSlice = createSlice({
 
       // addManager
       .addCase(addManager.pending, (state) => {
-        state.loading = true;
         state.error = null;
       })
       .addCase(addManager.fulfilled, (state, action: PayloadAction<IUser>) => {
-        state.loading = false;
         state.users.unshift(action.payload);
         state.total += 1;
       })
       .addCase(addManager.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-      // copyActivationLink
-      .addCase(copyActivationLink.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(copyActivationLink.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(copyActivationLink.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-      // copyRecoveryLink
-      .addCase(copyRecoveryLink.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(copyRecoveryLink.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(copyRecoveryLink.rejected, (state, action) => {
-        state.loading = false;
         state.error = action.payload as string;
       })
 
       // toggleUserBan
-      .addCase(toggleUserBan.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(toggleUserBan.fulfilled, (state, action: PayloadAction<IUser>) => {
-        state.loading = false;
-        const user = state.users.find(u => u.id === action.payload.id);
+        const user = state.users.find(u => Number(u.id) === Number(action.payload.id));
         if (user) {
           user.isBanned = Boolean(action.payload.isBanned);
           user.isActive = Boolean(action.payload.isActive);
         }
       })
       .addCase(toggleUserBan.rejected, (state, action) => {
-        state.loading = false;
         state.error = action.payload as string;
       });
   },

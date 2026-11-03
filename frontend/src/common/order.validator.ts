@@ -5,8 +5,8 @@ import { FormatsEnum } from '../enums/formats.enum';
 import { TypesEnum } from '../enums/types.enum';
 
 export const editOrderSchema = Joi.object({
-  name: Joi.string().min(2).max(25).allow(null, ''),
-  surname: Joi.string().min(2).max(25).allow(null, ''),
+  name: Joi.string().min(0).max(25).allow(null, ''),
+  surname: Joi.string().min(0).max(25).allow(null, ''),
   email: Joi.string()
     .max(100)
     .email({ tlds: { allow: false } })
@@ -20,7 +20,7 @@ export const editOrderSchema = Joi.object({
       'string.pattern.base':
         'Please enter a valid phone number (up to 12 characters).',
     }),
-  age: Joi.number().integer().min(1).max(99).allow(null),
+  age: Joi.number().integer().min(0).max(99).allow(null),
   sum: Joi.number().min(0).allow(null),
   alreadyPaid: Joi.number()
     .min(0)

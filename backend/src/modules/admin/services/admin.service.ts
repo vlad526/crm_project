@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,6 +21,7 @@ import { UserResDto } from '../../users/models/dto/res/user.res.dto';
 import { OrdersStatsDto } from '../../orders/dto/req/order.stats.dto';
 import { OrdersService } from '../../orders/services/orders.service';
 import { UserWithStatsResDto } from '../../users/models/dto/res/user-with-stats-res.dto';
+import { UserMapper } from '../../users/user.mapper';
 
 @Injectable()
 export class AdminService {
@@ -39,7 +42,7 @@ export class AdminService {
       throw new ConflictException('Користувач з таким email вже існує');
     }
 
-    let baseUsername = (dto.username || dto.email.split('@')[0]).slice(0, 20);
+    const baseUsername = (dto.username || dto.email.split('@')[0]).slice(0, 20);
     let username = baseUsername;
 
     const existingByUsername = await this.usersRepository.findOne({
@@ -57,9 +60,12 @@ export class AdminService {
       ...dto,
       username,
       password: basePassword,
+      isActive: false,
+      isBanned: false,
     });
 
-    return await this.usersRepository.save(managerEntity);
+    const saved = await this.usersRepository.save(managerEntity);
+    return UserMapper.toResDto(saved);
   }
 
   async createActivationToken(
@@ -69,6 +75,13 @@ export class AdminService {
     if (!manager) {
       throw new NotFoundException(`User ${managerId} not found`);
     }
+    if (manager.isBanned) {
+      throw new ForbiddenException('Cannot activate a banned user');
+    }
+    if (manager.isActive) {
+      throw new BadRequestException('User is already activated');
+    }
+
     const payload: IActionTokenPayload = {
       sub: manager.id,
       email: manager.email,
@@ -105,6 +118,13 @@ export class AdminService {
     if (!user) {
       throw new NotFoundException(`User ${userId} not found`);
     }
+    if (user.isBanned) {
+      throw new ForbiddenException('Cannot recover password for a banned user');
+    }
+    if (!user.isActive) {
+      throw new BadRequestException('User account is not activated yet');
+    }
+
     const payload: IActionTokenPayload = {
       sub: user.id,
       email: user.email,
