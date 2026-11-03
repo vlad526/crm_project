@@ -10,7 +10,8 @@ export class UserMapper {
       email: user.email,
       role: user.role,
       avatarUrl: user.avatarUrl,
-      isActive: user.isActive,
+      isActive: Boolean(user.isActive),
+      isBanned: Boolean(user.isBanned),
       lastLogin: user.lastLogin,
       last_login: user.lastLogin,
     } as any;

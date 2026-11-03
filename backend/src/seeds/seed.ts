@@ -29,12 +29,13 @@ async function bootstrap() {
       name: 'Admin',
       surname: 'System',
       isActive: true,
+      isBanned: false,
     });
 
     await userRepo.save(admin);
     console.log(`Admin seeded successfully! Email: ${adminEmail} | Password: ${adminPassword}`);
   } else {
-    await userRepo.update({ email: adminEmail }, { isActive: true });
+    await userRepo.update({ email: adminEmail }, { isActive: true, isBanned: false });
     console.log('Admin already exists, skipping seed');
   }
 

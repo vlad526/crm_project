@@ -1,20 +1,20 @@
-import type {IOrder} from "../models/interfaces/IOrders/IOrder.ts";
-import type {IUpdateOrder} from "../models/interfaces/IOrders/IUpdateOrder.ts";
-import type {IGroup} from "../models/interfaces/IGroup/IGroup.ts";
-import type {IUser} from "../models/interfaces/IUser/IUser.ts";
-
-
+import type { IOrder } from "../models/interfaces/IOrders/IOrder.ts";
+import type { IUpdateOrder } from "../models/interfaces/IOrders/IUpdateOrder.ts";
+import type { IGroup } from "../models/interfaces/IGroup/IGroup.ts";
 
 export const mapOrderToUpdate = (order: IOrder): IUpdateOrder => {
-
-    const data: Partial<IOrder> = { ...order };
-
-    delete data.id;
-    delete data.created_at;
-
     return {
-        ...(data as unknown as IUpdateOrder ),
-        group: (order.group as unknown as IGroup)?.id ?? (order.group as unknown as number),
-        manager: (order.manager as unknown as IUser)?.id ?? (order.manager as unknown as number),
+        name: order.name ?? null,
+        surname: order.surname ?? null,
+        email: order.email ?? null,
+        phone: order.phone ?? null,
+        age: order.age ?? null,
+        course: order.course ?? null,
+        course_format: order.course_format ?? null,
+        course_type: order.course_type ?? null,
+        status: order.status ?? null,
+        sum: order.sum ?? null,
+        alreadyPaid: order.alreadyPaid ?? null,
+        group: (order.group as unknown as IGroup)?.id ?? (order.group as unknown as number) ?? null,
     };
 };

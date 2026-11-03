@@ -9,6 +9,7 @@ export interface IUser {
     surname: string;
     avatarUrl: string | null;
     isActive: boolean;
+    isBanned?: boolean;
     lastLogin?: string | null;
     last_login?: string | null;
     total_orders?: number;

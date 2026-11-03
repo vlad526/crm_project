@@ -1,24 +1,22 @@
-import {useSearchParams} from "react-router-dom";
-import {useDebounce} from "../hooks/useDebounce.ts";
-import {useEffect, useState} from "react";
+import { useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import Input from "../ui/input.tsx";
 import Select from "../ui/select.tsx";
-import {getOrderFiltersFromSearchParams} from "../../common/helper/getOrderFiltersFromSearchParams.ts";
-import {initialOrderFilters, ORDER_FILTER_KEYS} from "../res_constants/orderFilters.ts";
-import {groupActions} from "../../slices/groupSlice.ts";
-import { useAppDispatch, useAppSelector} from "../store/store.ts";
-import {ExportButton} from "./ExportButton.tsx";
-import type {IOrderFilters} from "../../models/interfaces/IOrders/IOrderFilters.ts";
-import type {CoursesEnum} from "../../enums/courses.enum.ts";
-import type {StatusesEnum} from "../../enums/statuses.enum.ts";
-import type {TypesEnum} from "../../enums/types.enum.ts";
-import type {FormatsEnum} from "../../enums/formats.enum.ts";
-import refreshIcon from '../../assets/refresh-icon.png'
-
+import { getOrderFiltersFromSearchParams } from "../../common/helper/getOrderFiltersFromSearchParams.ts";
+import { initialOrderFilters, ORDER_FILTER_KEYS } from "../res_constants/orderFilters.ts";
+import { groupActions } from "../../slices/groupSlice.ts";
+import { ordersActions } from "../../slices/ordersSlice.ts";
+import { useAppDispatch, useAppSelector } from "../store/store.ts";
+import { ExportButton } from "./ExportButton.tsx";
+import type { IOrderFilters } from "../../models/interfaces/IOrders/IOrderFilters.ts";
+import type { CoursesEnum } from "../../enums/courses.enum.ts";
+import type { StatusesEnum } from "../../enums/statuses.enum.ts";
+import type { TypesEnum } from "../../enums/types.enum.ts";
+import type { FormatsEnum } from "../../enums/formats.enum.ts";
+import refreshIcon from "../../assets/refresh-icon.png";
 
 const OrdersFilters = () => {
     const dispatch = useAppDispatch();
-
     const { groups } = useAppSelector((state) => state.groupStoreSlice);
 
     useEffect(() => {
@@ -29,44 +27,67 @@ const OrdersFilters = () => {
 
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const [localFilters, setLocalFilters] = useState(() =>
-      getOrderFiltersFromSearchParams(new URLSearchParams(window.location.search))
+    const [localFilters, setLocalFilters] = useState<IOrderFilters>(() =>
+      getOrderFiltersFromSearchParams(searchParams)
     );
 
-    const debouncedFilters = useDebounce(localFilters, 600);
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
     useEffect(() => {
-        const currentParams = new URLSearchParams(window.location.search);
-        const nextParams = new URLSearchParams(currentParams.toString());
-        let hasChanged = false;
+        setLocalFilters(getOrderFiltersFromSearchParams(searchParams));
+    }, [searchParams]);
 
-        for (const key in debouncedFilters) {
-            const urlKey = ORDER_FILTER_KEYS[key as keyof typeof ORDER_FILTER_KEYS] || key;
-            let newValue = String(debouncedFilters[key as keyof typeof debouncedFilters] || "");
 
-            if (key === "onlyMine" && (newValue === "" || newValue === "undefined")) {
-                newValue = "false";
+    const applyFilterToUrl = (key: keyof IOrderFilters, rawValue: string) => {
+        const nextParams = new URLSearchParams(window.location.search);
+        const urlKey = ORDER_FILTER_KEYS[key as keyof typeof ORDER_FILTER_KEYS] || key;
+        const cleanValue = rawValue.trim();
+
+        if (key === "onlyMine") {
+            if (cleanValue === "true") {
+                nextParams.set(urlKey, "true");
+            } else {
+                nextParams.delete(urlKey);
             }
-
-            const oldValue = currentParams.get(urlKey) || "";
-
-            if (newValue !== oldValue) {
-                hasChanged = true;
-                if (newValue) nextParams.set(urlKey, newValue);
-                else nextParams.delete(urlKey);
-            }
-        }
-
-        if (hasChanged) {
-            nextParams.set("page", "1");
-
-            if (nextParams.toString() !== searchParams.toString()) {
-                setSearchParams(nextParams, { replace: true });
+        } else {
+            if (cleanValue) {
+                nextParams.set(urlKey, cleanValue);
+            } else {
+                nextParams.delete(urlKey);
             }
         }
-    }, [debouncedFilters, searchParams, setSearchParams]);
+
+        nextParams.set("page", "1");
+        setSearchParams(nextParams, { replace: true });
+    };
+
+
+    const handleTextFilterChange = (key: keyof IOrderFilters, value: string) => {
+        setLocalFilters((prev) => ({ ...prev, [key]: value }));
+
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        debounceTimerRef.current = setTimeout(() => {
+            applyFilterToUrl(key, value);
+        }, 500);
+    };
+
+
+    const handleImmediateFilterChange = (key: keyof IOrderFilters, value: string) => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+        setLocalFilters((prev) => ({ ...prev, [key]: value }));
+        applyFilterToUrl(key, value);
+    };
 
     const handleReset = () => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
         setLocalFilters(initialOrderFilters as IOrderFilters);
 
         const cleanParams = new URLSearchParams();
@@ -76,53 +97,53 @@ const OrdersFilters = () => {
         setSearchParams(cleanParams, { replace: true });
     };
 
+    const handleRefresh = () => {
+        dispatch(
+          ordersActions.loadOrders(
+            Object.fromEntries(searchParams.entries())
+          )
+        );
+    };
+
     return (
-      <form className="flex flex-2 gap-4 m-2">
+      <form className="flex flex-2 gap-4 m-2" onSubmit={(e) => e.preventDefault()}>
           <div className="grid grid-cols-6 gap-2">
               <Input
                 placeholder="Name"
                 value={localFilters.name}
-                onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, name: e.target.value}))
-                }
+                onChange={(e) => handleTextFilterChange("name", e.target.value)}
               />
 
               <Input
                 placeholder="Surname"
                 value={localFilters.surname}
-                onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, surname: e.target.value}))
-                }
+                onChange={(e) => handleTextFilterChange("surname", e.target.value)}
               />
 
               <Input
                 placeholder="Email"
                 value={localFilters.email}
-                onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, email: e.target.value}))
-                }
+                onChange={(e) => handleTextFilterChange("email", e.target.value)}
               />
 
               <Input
                 placeholder="Phone"
                 value={localFilters.phone}
-                onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, phone: e.target.value}))
-                }
+                onChange={(e) => handleTextFilterChange("phone", e.target.value)}
               />
 
               <Input
+                type="number"
+                min="0"
                 placeholder="Age"
                 value={localFilters.age}
-                onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, age: e.target.value}))
-                }
+                onChange={(e) => handleTextFilterChange("age", e.target.value)}
               />
 
               <Select
                 value={localFilters.course}
                 onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, course: e.target.value as CoursesEnum}))
+                  handleImmediateFilterChange("course", e.target.value as CoursesEnum)
                 }
               >
                   <option value="">all courses</option>
@@ -137,7 +158,7 @@ const OrdersFilters = () => {
               <Select
                 value={localFilters.course_format}
                 onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, course_format: e.target.value as FormatsEnum}))
+                  handleImmediateFilterChange("course_format", e.target.value as FormatsEnum)
                 }
               >
                   <option value="">all formats</option>
@@ -148,7 +169,7 @@ const OrdersFilters = () => {
               <Select
                 value={localFilters.course_type}
                 onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, course_type: e.target.value as TypesEnum}))
+                  handleImmediateFilterChange("course_type", e.target.value as TypesEnum)
                 }
               >
                   <option value="">all types</option>
@@ -162,7 +183,7 @@ const OrdersFilters = () => {
               <Select
                 value={localFilters.status}
                 onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, status: e.target.value as StatusesEnum}))
+                  handleImmediateFilterChange("status", e.target.value as StatusesEnum)
                 }
               >
                   <option value="">all statuses</option>
@@ -175,9 +196,7 @@ const OrdersFilters = () => {
 
               <Select
                 value={localFilters.group}
-                onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, group: e.target.value}))
-                }
+                onChange={(e) => handleImmediateFilterChange("group", e.target.value)}
               >
                   <option value="">all groups</option>
                   {groups?.map((group) => (
@@ -191,32 +210,25 @@ const OrdersFilters = () => {
                 type="date"
                 placeholder="Start date"
                 value={localFilters.startDate}
-                onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, startDate: e.target.value}))
-                }
+                onChange={(e) => handleImmediateFilterChange("startDate", e.target.value)}
               />
 
               <Input
                 type="date"
                 placeholder="End date"
                 value={localFilters.endDate}
-                onChange={(e) =>
-                  setLocalFilters(prev => ({...prev, endDate: e.target.value}))
-                }
+                onChange={(e) => handleImmediateFilterChange("endDate", e.target.value)}
               />
           </div>
 
-          <div className ="flex justify-center align-middle items-center px-2 py-2 gap-2 m-auto" >
-              <label htmlFor='checkbox' className="flex items-center gap-1 cursor-pointer">
+          <div className="flex justify-center align-middle items-center px-2 py-2 gap-2 m-auto">
+              <label htmlFor="checkbox" className="flex items-center gap-1 cursor-pointer">
                   <input
-                    id='checkbox'
+                    id="checkbox"
                     type="checkbox"
                     checked={localFilters.onlyMine === "true"}
                     onChange={(e) =>
-                      setLocalFilters(prev => ({
-                          ...prev,
-                          onlyMine: e.target.checked ? "true" : "false"
-                      }))
+                      handleImmediateFilterChange("onlyMine", e.target.checked ? "true" : "")
                     }
                   />
                   My
@@ -225,11 +237,23 @@ const OrdersFilters = () => {
               <button
                 type="button"
                 onClick={handleReset}
-                style={{ backgroundImage: `url(${refreshIcon})` }}
-                className="bg-[#2e7d32] hover:bg-[#43a047] transition-colors bg-center bg-no-repeat bg-size-[20px_20px] w-10 h-10 rounded-[5px]">
+                title="Reset filters"
+                aria-label="Reset filters"
+                className="bg-[#2e7d32] hover:bg-[#43a047] transition-colors text-white font-bold text-xs uppercase px-3 h-10 rounded-[5px] cursor-pointer"
+              >
+                  Reset
               </button>
 
-              <ExportButton filters={debouncedFilters} />
+              <button
+                type="button"
+                onClick={handleRefresh}
+                title="Refresh orders"
+                aria-label="Refresh orders"
+                style={{ backgroundImage: `url(${refreshIcon})` }}
+                className="bg-[#2e7d32] hover:bg-[#43a047] transition-colors bg-center bg-no-repeat bg-size-[20px_20px] w-10 h-10 rounded-[5px] cursor-pointer"
+              />
+
+              <ExportButton filters={localFilters} />
           </div>
       </form>
     );

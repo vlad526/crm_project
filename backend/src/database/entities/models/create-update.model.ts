@@ -1,9 +1,9 @@
 import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export class CreateUpdateModel {
-  @CreateDateColumn({ type: 'datetime', nullable: true })
+  @CreateDateColumn({ type: 'timestamp', nullable: true })
   created_at?: Date;
 
-  @UpdateDateColumn({ type: 'datetime', nullable: true })
+  @UpdateDateColumn({ type: 'timestamp', nullable: true })
   updated_at?: Date;
 }

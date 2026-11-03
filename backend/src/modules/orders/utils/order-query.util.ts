@@ -7,7 +7,7 @@ const ALLOWED_SORT_FIELDS = Object.values(OrderSortField);
 export function parseOrder(order?: string) {
   if (!order) {
     return {
-      sortBy: OrderSortField.CREATED_AT,
+      sortBy: OrderSortField.ID,
       sortOrder: SortOrder.DESC,
     };
   }

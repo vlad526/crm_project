@@ -24,6 +24,9 @@ export class UserBaseResDto {
   isActive: boolean;
 
   @ApiProperty()
+  isBanned: boolean;
+
+  @ApiProperty()
   lastLogin: Date | null;
 
   @ApiPropertyOptional({ example: 12 })

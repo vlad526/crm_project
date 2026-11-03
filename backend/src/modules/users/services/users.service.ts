@@ -60,7 +60,7 @@ export class UsersService {
       );
     }
 
-    targetUser.isActive = false;
+    targetUser.isBanned = true;
     const updatedUser = await this.usersRepository.save(targetUser);
 
     return UserMapper.toResDto(updatedUser);
@@ -87,7 +87,7 @@ export class UsersService {
       );
     }
 
-    targetUser.isActive = true;
+    targetUser.isBanned = false;
     const updatedUser = await this.usersRepository.save(targetUser);
 
     return UserMapper.toResDto(updatedUser);

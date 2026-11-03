@@ -16,6 +16,7 @@ import { SharedModule } from './shared/shared.module';
         username: envService.mysqlUser,
         password: envService.mysqlPassword,
         database: envService.mysqlDatabase,
+        timezone: 'Z',
         entities: [path.join(__dirname, '**', '*.entity{.ts,.js}')],
         synchronize: false,
         migrations: [

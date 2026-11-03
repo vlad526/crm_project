@@ -14,7 +14,6 @@ type OrdersTableProps = {
     currentSort: string | null;
 }
 
-
 const tableColumns: { key: OrderSortField; label: string }[] = [
     { key: "id", label: "id" },
     { key: "name", label: "name" },
@@ -115,18 +114,14 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ onSort, currentSort  }) => {
               order={editOrder}
               onClose={() => setEditOrder(null)}
               onSubmit={async (updateData: IUpdateOrder) => {
-                  try {
-                      await dispatch(
-                        ordersActions.loadUpdateOrder({
-                            id: editOrder.id,
-                            payload: updateData,
-                        })
-                      ).unwrap();
+                  await dispatch(
+                    ordersActions.loadUpdateOrder({
+                        id: editOrder.id,
+                        payload: updateData,
+                    })
+                  ).unwrap();
 
-                      setEditOrder(null);
-                  } catch (error) {
-                      console.error("Failed to update order:", error);
-                  }
+                  setEditOrder(null);
               }}
             />
           )}

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -69,7 +70,14 @@ export class OrdersService {
         phone: `%${phone.toLowerCase()}%`,
       });
 
-    if (age) queryBuilder.andWhere('order.age = :age', { age: Number(age) });
+    if (age !== undefined && age !== '') {
+      const parsedAge = Number(age);
+      if (!Number.isNaN(parsedAge)) {
+        queryBuilder.andWhere('order.age = :age', { age: parsedAge });
+      } else {
+        queryBuilder.andWhere('1 = 0');
+      }
+    }
 
     if (startDate) {
       queryBuilder.andWhere('order.created_at >= :startDate', { startDate });
@@ -258,15 +266,45 @@ export class OrdersService {
               'This application is already assigned to a manager and cannot be edited',
             );
           }
-        } else {
-          targetedOrder.manager = currentUser;
-          if (!updateData.status || updateData.status === StatusesEnum.NEW) {
-            updateData.status = StatusesEnum.INWORK;
+        }
+
+        const effectiveSum =
+          updateData.sum !== undefined ? updateData.sum : targetedOrder.sum;
+        const effectiveAlreadyPaid =
+          updateData.alreadyPaid !== undefined
+            ? updateData.alreadyPaid
+            : targetedOrder.alreadyPaid;
+
+        if (
+          effectiveAlreadyPaid !== null &&
+          effectiveAlreadyPaid !== undefined &&
+          effectiveAlreadyPaid > 0
+        ) {
+          if (effectiveSum === null || effectiveSum === undefined) {
+            throw new BadRequestException(
+              'Already paid cannot be greater than total sum',
+            );
+          }
+          if (Number(effectiveAlreadyPaid) > Number(effectiveSum)) {
+            throw new BadRequestException(
+              'Already paid cannot be greater than total sum',
+            );
           }
         }
 
         if (updateData.status === StatusesEnum.NEW) {
           targetedOrder.manager = null as unknown as UserEntity;
+          targetedOrder.status = StatusesEnum.NEW;
+        } else {
+          if (!targetedOrder.manager) {
+            targetedOrder.manager = currentUser;
+          }
+          if (
+            !updateData.status &&
+            (!targetedOrder.status || targetedOrder.status === StatusesEnum.NEW)
+          ) {
+            updateData.status = StatusesEnum.INWORK;
+          }
         }
 
         if (updateData.group !== undefined) {
@@ -364,11 +402,11 @@ export class OrdersService {
         course_format: order.course_format,
         course_type: order.course_type,
         status: order.status,
-        group: order.group?.name || 'No group',
+        group: order.group?.name || '',
         createdAt: order.created_at
           ? new Date(order.created_at).toLocaleDateString()
           : '',
-        manager: order.manager?.surname || 'Not assigned',
+        manager: order.manager?.surname || '',
       });
     }
 

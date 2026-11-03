@@ -38,8 +38,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Token is blocked or invalid');
     }
 
-    if (!tokenEntity.user.isActive) {
-      throw new UnauthorizedException('User account is deactivated');
+    if (!tokenEntity.user.isActive || tokenEntity.user.isBanned) {
+      throw new UnauthorizedException('User account is deactivated or banned');
     }
 
     return tokenEntity.user;

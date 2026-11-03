@@ -41,7 +41,8 @@ export class CommentsService {
         }
 
         if (targetOrder.manager) {
-          const isOwner = Number(targetOrder.manager.id) === Number(currentUser.id);
+          const isOwner =
+            Number(targetOrder.manager.id) === Number(currentUser.id);
           if (!isOwner) {
             throw new ForbiddenException(
               'This application is already assigned to another manager. Only the assigned manager can comment on it.',
@@ -55,10 +56,13 @@ export class CommentsService {
           targetOrder.status = StatusesEnum.INWORK;
         }
 
+        const now = new Date();
         const newComment = commentRepository.create({
           text: commentData.text,
           order: targetOrder,
           user: currentUser,
+          created_at: now,
+          updated_at: now,
         });
 
         await orderRepository.save(targetOrder);

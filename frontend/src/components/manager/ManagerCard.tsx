@@ -16,6 +16,30 @@ export const ManagerCard: FC<State> = ({ user }) => {
     const { me, loading } = useAuth();
 
     const isSelf = !loading && me?.id === user.id;
+    const isBanned = Boolean(user.isBanned);
+
+
+    const copyToClipboard = async (text: string) => {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                throw err;
+            }
+            textArea.remove();
+        }
+    };
 
     const handleActionClick = async () => {
         if (copyStep === 'idle') {
@@ -31,7 +55,7 @@ export const ManagerCard: FC<State> = ({ user }) => {
                 const emailSent = response?.emailSent;
 
                 if (link) {
-                    await navigator.clipboard.writeText(link);
+                    await copyToClipboard(link);
                     setCopyStep('copied');
                     setTimeout(() => setCopyStep('idle'), 3000);
 
@@ -82,9 +106,12 @@ export const ManagerCard: FC<State> = ({ user }) => {
               <p>email: {user.email}</p>
               <p>name: {user.name}</p>
               <p>surname: {user.surname}</p>
-              <p>isActive: <span className={user.isActive ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                    {String(user.isActive)}
-                </span></p>
+              <p>
+                  is_active:{' '}
+                  <span className={user.isActive && !isBanned ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+                      {user.isActive ? (isBanned ? 'false (banned)' : 'true') : 'false'}
+                  </span>
+              </p>
 
               <p>
                   last login:{' '}
@@ -108,15 +135,15 @@ export const ManagerCard: FC<State> = ({ user }) => {
               <div className="flex gap-2 w-full justify-end">
                   <button
                     onClick={handleActionClick}
-                    disabled={loading || isSelf || copyStep === 'copied'}
+                    disabled={loading || isSelf || isBanned || copyStep === 'copied'}
                     className={`h-8.5 flex items-center justify-center px-4 rounded text-[12px] uppercase font-bold border transition-all flex-1 ${
-                      isSelf
+                      isSelf || isBanned
                         ? "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
                         : copyStep === 'idle'
                           ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
                           : "bg-green-500 text-white border-green-600 hover:bg-green-700"
                     } ${copyStep === 'copied' ? "cursor-default" : ""}`}
-                    title={isSelf ? "You cannot manage your own links" : ""}
+                    title={isSelf ? "You cannot manage your own links" : isBanned ? "User is banned" : ""}
                   >
                       {copyStep === 'idle' && (user.isActive ? "Recovery Password" : "Activate")}
                       {copyStep === 'ready' && "Copy to clipboard"}
@@ -125,9 +152,9 @@ export const ManagerCard: FC<State> = ({ user }) => {
 
                   <button
                     onClick={() => handleToggleBan(user.id, 'ban')}
-                    disabled={loading || isSelf || !user.isActive}
+                    disabled={loading || isSelf || isBanned}
                     className={`min-w-17.5 h-8.5 flex items-center justify-center px-3 rounded text-[12px] uppercase font-bold transition-colors ${
-                      !loading && !isSelf && user.isActive
+                      !loading && !isSelf && !isBanned
                         ? "bg-red-500 text-white hover:bg-red-600"
                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}
@@ -138,9 +165,9 @@ export const ManagerCard: FC<State> = ({ user }) => {
 
                   <button
                     onClick={() => handleToggleBan(user.id, 'unban')}
-                    disabled={loading || isSelf || user.isActive}
+                    disabled={loading || isSelf || !isBanned}
                     className={`min-w-17.5 h-8.5 flex items-center justify-center px-3 rounded text-[12px] uppercase font-bold transition-colors ${
-                      !loading && !isSelf && !user.isActive
+                      !loading && !isSelf && isBanned
                         ? "bg-green-600 text-white hover:bg-green-700"
                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}

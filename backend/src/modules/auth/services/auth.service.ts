@@ -96,11 +96,22 @@ export class AuthService {
         id: tokenPayload.sub,
         actionToken: dto.token,
       },
-      select: ['id', 'email', 'name', 'password', 'isActive', 'actionToken'],
+      select: [
+        'id',
+        'email',
+        'name',
+        'password',
+        'isActive',
+        'isBanned',
+        'actionToken',
+      ],
     });
 
     if (!user) {
       throw new NotFoundException('User not found or invalid token');
+    }
+    if (user.isBanned) {
+      throw new ForbiddenException('User account is banned');
     }
     if (user.isActive) {
       throw new BadRequestException('User is already active');
@@ -140,11 +151,22 @@ export class AuthService {
         id: tokenPayload.sub,
         actionToken: dto.token,
       },
-      select: ['id', 'email', 'name', 'password', 'isActive', 'actionToken'],
+      select: [
+        'id',
+        'email',
+        'name',
+        'password',
+        'isActive',
+        'isBanned',
+        'actionToken',
+      ],
     });
 
     if (!user) {
       throw new NotFoundException('User not found or invalid token');
+    }
+    if (user.isBanned) {
+      throw new ForbiddenException('User account is banned');
     }
 
     const newHashedPassword = await bcrypt.hash(dto.password, 10);
@@ -200,7 +222,11 @@ export class AuthService {
     }
 
     if (!user.isActive) {
-      throw new ForbiddenException('User account is inactive');
+      throw new ForbiddenException('User account is not activated');
+    }
+
+    if (user.isBanned) {
+      throw new ForbiddenException('User account is banned');
     }
 
     return user;

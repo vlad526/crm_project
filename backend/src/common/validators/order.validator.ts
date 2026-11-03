@@ -43,7 +43,9 @@ const editOrderSchema = Joi.object({
     .optional()
     .when('sum', {
       is: Joi.number().required(),
-      then: Joi.number().max(Joi.ref('sum')).optional(),
+      then: Joi.number().max(Joi.ref('sum')).optional().messages({
+        'number.max': 'Already paid cannot be greater than sum',
+      }),
     }),
 
   status: Joi.string()

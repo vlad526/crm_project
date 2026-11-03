@@ -47,6 +47,9 @@ export class UserEntity extends CreateUpdateModel {
   @Column({ type: 'boolean', default: false })
   isActive: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  isBanned: boolean;
+
   @Column({ type: 'timestamp', nullable: true })
   lastLogin: Date | null;
 

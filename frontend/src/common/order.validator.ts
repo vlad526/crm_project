@@ -5,9 +5,10 @@ import { FormatsEnum } from '../enums/formats.enum';
 import { TypesEnum } from '../enums/types.enum';
 
 export const editOrderSchema = Joi.object({
-  name: Joi.string().min(2).max(50).allow(null, ''),
-  surname: Joi.string().min(2).max(50).allow(null, ''),
+  name: Joi.string().min(2).max(25).allow(null, ''),
+  surname: Joi.string().min(2).max(25).allow(null, ''),
   email: Joi.string()
+    .max(100)
     .email({ tlds: { allow: false } })
     .allow(null, ''),
   phone: Joi.string()
@@ -21,7 +22,22 @@ export const editOrderSchema = Joi.object({
     }),
   age: Joi.number().integer().min(1).max(99).allow(null),
   sum: Joi.number().min(0).allow(null),
-  alreadyPaid: Joi.number().min(0).max(Joi.ref('sum')).allow(null),
+  alreadyPaid: Joi.number()
+    .min(0)
+    .allow(null)
+    .custom((value, helpers) => {
+      if (value === null || value === undefined || value === 0) {
+        return value;
+      }
+      const sum = helpers.state.ancestors[0]?.sum;
+      if (sum === null || sum === undefined || Number(value) > Number(sum)) {
+        return helpers.error('number.max');
+      }
+      return value;
+    })
+    .messages({
+      'number.max': 'Already paid cannot be greater than total sum',
+    }),
   status: Joi.string()
     .valid(...Object.values(StatusesEnum))
     .allow(null, ''),
@@ -35,5 +51,4 @@ export const editOrderSchema = Joi.object({
   course_type: Joi.string()
     .valid(...Object.values(TypesEnum))
     .allow(null, ''),
-  manager: Joi.number().optional().allow(null),
 });

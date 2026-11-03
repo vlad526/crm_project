@@ -9,6 +9,22 @@ interface CommentsProps {
     orderId: string;
 }
 
+const formatCommentDate = (rawDate: string | Date): string => {
+    if (!rawDate) return "";
+    const str = String(rawDate);
+    const normalized =
+      str.includes("Z") || /[+-]\d{2}:\d{2}$/.test(str)
+        ? str
+        : `${str.replace(" ", "T")}Z`;
+    return new Date(normalized).toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
+
 export const Comments = ({ orderId }: CommentsProps) => {
     const dispatch = useAppDispatch();
     const { items: comments, loading, error } = useAppSelector((state) => state.commentStoreSlice);
@@ -88,13 +104,7 @@ export const Comments = ({ orderId }: CommentsProps) => {
 
                     <span className="text-[10px] text-gray-500 text-right shrink-0">
                         <span className="font-semibold text-gray-700">{c.user?.name} {c.user?.surname}</span> <br />
-                        {new Date(c.created_at).toLocaleString(undefined, {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}
+                        {formatCommentDate(c.created_at)}
                     </span>
                 </div>
               ))}
