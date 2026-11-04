@@ -11,7 +11,6 @@ import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../../auth/services/email.service';
 import { CreateManagerReqDto } from '../models/dto/req/create-manager.req.dto';
 import { UserBaseResDto } from '../../users/models/dto/res/users-base-res';
-import bcrypt from 'bcrypt';
 import process from 'node:process';
 
 import { IActionTokenPayload } from '../../auth/intefaces/IAction-token-payload.interface';
@@ -54,7 +53,7 @@ export class AdminService {
       username = `${baseUsername}_${randomSuffix}`.slice(0, 25);
     }
 
-    const basePassword = await bcrypt.hash(Math.random().toString(36), 10);
+    const basePassword = Math.random().toString(36).slice(-10);
 
     const managerEntity = this.usersRepository.create({
       ...dto,

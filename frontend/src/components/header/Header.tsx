@@ -42,20 +42,22 @@ export const Header = () => {
                   Logo
               </div>
 
-
               <div className="flex items-center text-xl text-white gap-4">
+                  {me && (
+                    <span className="font-medium tracking-wide">
+                        {me.name}
+                    </span>
+                  )}
+
                   {isAdmin && (
-                    <div className="flex items-center gap-2">
-                        <span className="font-medium tracking-wide">admin</span>
-                        <button
-                          type="button"
-                          onClick={handleAdminPanel}
-                          title="Admin Panel"
-                          aria-label="Open Admin Panel"
-                          style={{ backgroundImage: `url(${adminIcon})` }}
-                          className="bg-[#2e7d32] hover:bg-[#1b5e20] transition-colors bg-center bg-no-repeat bg-[length:20px_20px] w-10 h-10 rounded-[5px]"
-                        />
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAdminPanel}
+                      title="Admin Panel"
+                      aria-label="Open Admin Panel"
+                      style={{ backgroundImage: `url(${adminIcon})` }}
+                      className="bg-[#2e7d32] hover:bg-[#1b5e20] transition-colors bg-center bg-no-repeat bg-[length:20px_20px] w-10 h-10 rounded-[5px] cursor-pointer"
+                    />
                   )}
 
                   <button
@@ -64,7 +66,7 @@ export const Header = () => {
                     title="Logout"
                     aria-label="Logout"
                     style={{ backgroundImage: `url(${logoutIcon})` }}
-                    className="bg-[#2e7d32] hover:bg-[#1b5e20] transition-colors bg-center bg-no-repeat bg-[length:20px_20px] w-10 h-10 rounded-[5px]"
+                    className="bg-[#2e7d32] hover:bg-[#1b5e20] transition-colors bg-center bg-no-repeat bg-[length:20px_20px] w-10 h-10 rounded-[5px] cursor-pointer"
                   />
               </div>
           </header>

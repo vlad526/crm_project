@@ -31,30 +31,52 @@ const OrdersFilters = () => {
       getOrderFiltersFromSearchParams(searchParams)
     );
 
-    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const committedFiltersRef = useRef<IOrderFilters>(
+      getOrderFiltersFromSearchParams(searchParams)
+    );
 
+
+    const debounceTimersRef = useRef<
+      Partial<Record<keyof IOrderFilters, ReturnType<typeof setTimeout>>>
+    >({});
 
     useEffect(() => {
-        setLocalFilters(getOrderFiltersFromSearchParams(searchParams));
-    }, [searchParams]);
+        const timers = debounceTimersRef.current;
+        return () => {
+            Object.values(timers).forEach((timer) => {
+                if (timer) clearTimeout(timer);
+            });
+        };
+    }, []);
 
 
     const applyFilterToUrl = (key: keyof IOrderFilters, rawValue: string) => {
-        const nextParams = new URLSearchParams(window.location.search);
-        const urlKey = ORDER_FILTER_KEYS[key as keyof typeof ORDER_FILTER_KEYS] || key;
         const cleanValue = rawValue.trim();
 
-        if (key === "onlyMine") {
-            if (cleanValue === "true") {
-                nextParams.set(urlKey, "true");
+        committedFiltersRef.current = {
+            ...committedFiltersRef.current,
+            [key]: key === "onlyMine" ? (cleanValue === "true" ? "true" : "") : cleanValue,
+        };
+
+
+        const nextParams = new URLSearchParams(window.location.search);
+
+        for (const filterKey of Object.keys(ORDER_FILTER_KEYS) as Array<keyof typeof ORDER_FILTER_KEYS>) {
+            const urlKey = ORDER_FILTER_KEYS[filterKey];
+            const val = String(committedFiltersRef.current[filterKey] ?? "").trim();
+
+            if (filterKey === "onlyMine") {
+                if (val === "true") {
+                    nextParams.set(urlKey, "true");
+                } else {
+                    nextParams.delete(urlKey);
+                }
             } else {
-                nextParams.delete(urlKey);
-            }
-        } else {
-            if (cleanValue) {
-                nextParams.set(urlKey, cleanValue);
-            } else {
-                nextParams.delete(urlKey);
+                if (val) {
+                    nextParams.set(urlKey, val);
+                } else {
+                    nextParams.delete(urlKey);
+                }
             }
         }
 
@@ -66,29 +88,35 @@ const OrdersFilters = () => {
     const handleTextFilterChange = (key: keyof IOrderFilters, value: string) => {
         setLocalFilters((prev) => ({ ...prev, [key]: value }));
 
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
+        if (debounceTimersRef.current[key]) {
+            clearTimeout(debounceTimersRef.current[key]);
         }
 
-        debounceTimerRef.current = setTimeout(() => {
+        debounceTimersRef.current[key] = setTimeout(() => {
+            delete debounceTimersRef.current[key];
             applyFilterToUrl(key, value);
         }, 500);
     };
 
 
     const handleImmediateFilterChange = (key: keyof IOrderFilters, value: string) => {
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
+        if (debounceTimersRef.current[key]) {
+            clearTimeout(debounceTimersRef.current[key]);
+            delete debounceTimersRef.current[key];
         }
         setLocalFilters((prev) => ({ ...prev, [key]: value }));
         applyFilterToUrl(key, value);
     };
 
     const handleReset = () => {
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-        }
-        setLocalFilters(initialOrderFilters as IOrderFilters);
+        Object.values(debounceTimersRef.current).forEach((timer) => {
+            if (timer) clearTimeout(timer);
+        });
+        debounceTimersRef.current = {};
+
+        const resetState = { ...initialOrderFilters } as IOrderFilters;
+        committedFiltersRef.current = resetState;
+        setLocalFilters(resetState);
 
         const cleanParams = new URLSearchParams();
         cleanParams.set("page", "1");
@@ -100,7 +128,7 @@ const OrdersFilters = () => {
     const handleRefresh = () => {
         dispatch(
           ordersActions.loadOrders(
-            Object.fromEntries(searchParams.entries())
+            Object.fromEntries(new URLSearchParams(window.location.search).entries())
           )
         );
     };
@@ -201,6 +229,7 @@ const OrdersFilters = () => {
                   <option value="">all groups</option>
                   {groups?.map((group) => (
                     <option key={group.id} value={group.id}>
+                        {group.name}
                         {group.name}
                     </option>
                   ))}
