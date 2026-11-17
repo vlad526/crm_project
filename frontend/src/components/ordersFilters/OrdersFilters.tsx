@@ -230,7 +230,6 @@ const OrdersFilters = () => {
                   {groups?.map((group) => (
                     <option key={group.id} value={group.id}>
                         {group.name}
-                        {group.name}
                     </option>
                   ))}
               </Select>
